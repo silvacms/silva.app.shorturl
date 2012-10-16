@@ -7,7 +7,7 @@
   <five:registerPackage package="." />
 
   <include package="Products.Silva" />
-  <include package="silva.core.layout" />
+  <include package="silva.core.views" />
   <include package="silva.core.services" />
 
   <grok:grok package="." />

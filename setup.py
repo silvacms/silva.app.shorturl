@@ -38,7 +38,7 @@ setup(name='silva.app.shorturl',
         'setuptools',
         'Products.Silva',
         'silva.core.conf',
-        'silva.core.layout',
+        'silva.core.views',
         'silva.core.services'
         ],
       tests_require=tests_require,

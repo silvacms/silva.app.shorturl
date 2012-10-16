@@ -4,7 +4,7 @@
 from zope.interface import Interface
 
 from silva.core.interfaces import ISilvaService
-from silva.core.layout.interfaces import ICustomizableMarker
+from silva.core.views.interfaces import ICustomizableTag
 
 
 class IShortURLService(ISilvaService):
@@ -22,6 +22,6 @@ class IShortURLService(ISilvaService):
         """
 
 
-class IShortURLMarker(ICustomizableMarker):
-    """ Allow traversing to object through short URL.
+class IShortURLMarker(ICustomizableTag):
+    """ Allow traversing to contents through short URL
     """
