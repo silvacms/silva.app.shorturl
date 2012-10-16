@@ -35,9 +35,10 @@ setup(name='silva.app.shorturl',
       install_requires=[
         'Zope2',
         'five.grok',
-        'grokcore.chameleon',
         'setuptools',
+        'Products.Silva',
         'silva.core.conf',
+        'silva.core.layout',
         'silva.core.services'
         ],
       tests_require=tests_require,
