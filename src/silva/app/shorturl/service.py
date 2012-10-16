@@ -8,6 +8,8 @@ from five import grok
 from zope.intid.interfaces import IIntIds
 from zope.component import getUtility
 
+import BTrees
+
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 
@@ -15,6 +17,7 @@ from silva.core.services.base import SilvaService
 
 from .interfaces import IShortURLService
 from .codec import ShortURLCodec
+
 
 
 BASE_ALPHABET = bytearray("abcdefghijkmnpqrstwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
@@ -32,6 +35,7 @@ class ShortURLService(SilvaService):
     meta_type = 'Silva Shorl URL Service'
 
     security = ClassSecurityInfo()
+    family = BTrees.family32
 
     # silvaconf.icon('static/shorturl_service.png')
 
@@ -42,6 +46,8 @@ class ShortURLService(SilvaService):
         super(ShortURLService, self).__init__(id)
         self._alphabet = generate_alphabet()
         self._alphabet_set = set(self._alphabet)
+        self._custom_url_index = self.family.OI.BTree()
+        self._custom_url_reverse_index = self.family.IO.BTree()
 
     def _get_codec(self):
         return ShortURLCodec(alphabet=self._alphabet,
@@ -63,6 +69,23 @@ class ShortURLService(SilvaService):
         id = self._get_int_id(short_path)
         intids = getUtility(IIntIds)
         return intids.queryObject(id)
+
+    def register_custom_short_path(self, short_path, content):
+        intids = getUtility(IIntIds)
+        id = intids.register(content)
+        self._custom_url_index[short_path] = id
+        self._custom_url_reverse_index[id] = short_path
+
+    def get_registered_short_path(self, content):
+        intids = getUtility(IIntIds)
+        id = intids.register(content)
+        return self._custom_url_reverse_index[id]
+
+    def get_content_from_custom_short_path(self, short_path):
+        id = self._custom_url_index[short_path]
+        if id is not None:
+            intids = getUtility(IIntIds)
+            return intids.queryObject(id)
 
     def validate_short_path(self, short_path):
         return not(set(short_path) - self._alphabet_set)

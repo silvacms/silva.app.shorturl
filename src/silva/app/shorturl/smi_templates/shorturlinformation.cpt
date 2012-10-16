@@ -1,4 +1,6 @@
 <div class="portlet">
     <h4>Short URL Information</h4>
-    <p>${viewlet.short_path}</p>
+    <p>
+        <a href="${viewlet.short_url}">${viewlet.short_url}</a>
+    </p>
 </div>
