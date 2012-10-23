@@ -1,6 +1,13 @@
 <div class="portlet">
-    <h4>Short URL Information</h4>
+    <h4>Short URL</h4>
     <p>
-        <a href="${viewlet.short_url}">${viewlet.short_url}</a>
+        <dl>
+            <dt>Short URL</dt>
+            <dd><a href="${viewlet.short_url}">${viewlet.short_url}</a></dd>
+            <tal:block tal:condition="viewlet.custom_short_url"> 
+                <dt>Custom URL</dt>
+                <dd><a href="${viewlet.custom_short_url}">${viewlet.custom_short_url}</a></dd>
+            </tal:block>
+        </dl>
     </p>
 </div>

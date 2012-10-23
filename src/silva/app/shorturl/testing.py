@@ -1,12 +1,12 @@
 
-from Products.Silva.testing import SilvaLayer
+from silva.app.forest.testing import SilvaAppForestLayer
 
 import transaction
 import silva.app.shorturl
 
 
-class ShortURLLayer(SilvaLayer):
-    default_packages = SilvaLayer.default_packages + [
+class ShortURLLayer(SilvaAppForestLayer):
+    default_packages = SilvaAppForestLayer.default_packages + [
         'silva.app.shorturl',
         ]
 

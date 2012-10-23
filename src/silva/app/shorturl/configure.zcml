@@ -9,6 +9,7 @@
   <include package="Products.Silva" />
   <include package="silva.core.views" />
   <include package="silva.core.services" />
+  <include package="silva.app.forest" />
 
   <grok:grok package="." />
 

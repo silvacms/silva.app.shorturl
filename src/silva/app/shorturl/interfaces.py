@@ -5,6 +5,7 @@ from zope.interface import Interface
 
 from silva.core.interfaces import ISilvaService
 from silva.core.views.interfaces import ICustomizableTag
+from silva.app.forest.interfaces import IForestApplication
 
 
 class IShortURLService(ISilvaService):
@@ -24,4 +25,9 @@ class IShortURLService(ISilvaService):
 
 class IShortURLMarker(ICustomizableTag):
     """ Allow traversing to contents through short URL
+    """
+
+
+class IShortURLApplication(IForestApplication):
+    """ Marker for zope site to configure.
     """
