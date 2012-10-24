@@ -90,9 +90,11 @@ class ShortURLService(SilvaService):
 
     def get_content(self, short_path):
         content = self.get_content_from_custom_short_path(short_path)
-        if content is None:
-            if self.validate_short_path(short_path):
-                return self.get_content_from_short_path(short_path)
+        if content is not None:
+            return content
+
+        if self.validate_short_path(short_path):
+            return self.get_content_from_short_path(short_path)
 
     def get_content_from_short_path(self, short_path):
         if not self.validate_short_path(short_path):
