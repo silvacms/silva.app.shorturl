@@ -103,7 +103,7 @@ class ShortURLNameChooser(SilvaNameChooser):
     grok.context(ISite)
 
     def checkName(self, name, content):
-        service = self.container._getOb('service_shorturls')
+        service = self.container._getOb('service_shorturls', None)
         if service is not None and ICustomShortURLService.providedBy(service):
             content = service.get_content_from_custom_short_path(name)
             if content is not None:
@@ -119,7 +119,7 @@ class ShortURLSitePublishTraverse(SkinnyTraverser, grok.MultiAdapter):
     grok.adapts(ISite, IBrowserRequest)
 
     def publishTraverse(self, request, name):
-        service = self.context._getOb('service_shorturls')
+        service = self.context._getOb('service_shorturls', None)
         if service is not None and ICustomShortURLService.providedBy(service):
             content = service.get_content_from_custom_short_path(name)
             if content is not None:

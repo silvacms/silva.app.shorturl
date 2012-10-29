@@ -1,9 +1,11 @@
-<div class="portlet">
+<div class="portlet portlet-shorturl">
     <h4>Short URL</h4>
     <p>
         <dl>
+            <tal:block tal:condition="viewlet.short_url">
             <dt>Short URL</dt>
             <dd><a href="${viewlet.short_url}">${viewlet.short_url}</a></dd>
+            </tal:block>
             <tal:block tal:condition="viewlet.custom_short_url"> 
                 <dt>Custom URL</dt>
                 <dd><a href="${viewlet.custom_short_url}">${viewlet.custom_short_url}</a></dd>

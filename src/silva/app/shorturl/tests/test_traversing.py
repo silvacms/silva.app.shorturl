@@ -11,6 +11,8 @@ from silva.core.interfaces import ISiteManager
 from ..testing import FunctionalLayer
 from ..interfaces import IShortURLService
 
+# XXX: add test with SilvaLayer
+
 
 class TraversingTestCase(unittest.TestCase):
 
