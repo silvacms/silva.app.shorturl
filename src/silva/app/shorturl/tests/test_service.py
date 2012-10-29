@@ -1,13 +1,13 @@
 import unittest
 
-from zope.interface import alsoProvides
 from zope import component
-
+from zope.interface.verify import verifyObject
 
 from silva.app.forest.interfaces import IForestService
+from silva.core.interfaces import ISiteManager
 
 from ..testing import FunctionalLayer
-from ..interfaces import IShortURLMarker, IShortURLService
+from ..interfaces import IShortURLService, ICustomShortURLService
 
 
 class ServiceActivationTestCase(unittest.TestCase):
@@ -45,46 +45,48 @@ class ServiceActivationTestCase(unittest.TestCase):
         self.assertFalse(self.service.is_active())
 
 
-class ShortURLServiceTestCase(unittest.TestCase):
+class CustomShortURLServiceTestCase(unittest.TestCase):
 
     layer = FunctionalLayer
 
     def setUp(self):
         self.root = self.layer.get_application()
         factory = self.root.manage_addProduct['Silva']
-        factory.manage_addFolder('folder', 'Folder')
-        self.folder = self.root.folder
-        factory = self.folder.manage_addProduct['Silva']
+        factory.manage_addPublication('pub', 'Publication')
+        factory = self.root.pub.manage_addProduct['Silva']
         factory.manage_addMockupVersionedContent('something', 'Some Content')
         factory.manage_addMockupVersionedContent('other', 'Other Content')
 
-        self.content = self.folder.something
-        self.service = component.getUtility(IShortURLService)
-        alsoProvides(self.root, IShortURLMarker)
+        self.content = self.root.pub.something
 
-    def test_content_short_path(self):
-        short_path = self.service.get_short_path(self.content)
-        self.assertIsInstance(short_path, str)
-        self.assertEqual(
-            self.service.get_content_from_short_path(short_path),
-            self.content)
+    def test_verify_service(self):
+        short_url = component.queryUtility(IShortURLService)
+        self.assertTrue(verifyObject(ICustomShortURLService, short_url))
+        self.assertTrue(verifyObject(IShortURLService, short_url))
 
-    def test_custom_path(self):
-        self.service.register_custom_short_path('short', self.content)
-        self.assertEqual('short',
-            self.service.get_custom_short_path(self.content))
-        self.assertEqual(self.content,
-            self.service.get_content_from_custom_short_path('short'))
+    def test_verify_local_service(self):
+        ISiteManager(self.root.pub).make_site()
+        factory = self.root.pub.manage_addProduct['silva.app.shorturl']
+        factory.manage_addShortURLLocalService()
+        local_service = self.root.pub.service_shorturls
+        self.assertTrue(verifyObject(ICustomShortURLService, local_service))
 
-    def test_get_content(self):
-        short_path = self.service.get_short_path(self.content)
-        self.service.register_custom_short_path(short_path, self.folder.other)
-        self.assertEqual(self.folder.other,
-            self.service.get_content(short_path))
+    def test_name_chooser(self):
+        ISiteManager(self.root.pub).make_site()
+        factory = self.root.pub.manage_addProduct['silva.app.shorturl']
+        factory.manage_addShortURLLocalService()
+        local_service = self.root.pub.service_shorturls
+
+        self.assertTrue(self.root.pub.something)
+        local_service.register_custom_short_path('ST', self.content.something)
+        factory = self.root.pub.manage_addProduct['Silva']
+
+        with self.assertRaises(ValueError):
+            factory.manage_addMockupVersionedContent('ST', 'Some Content')
 
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ServiceActivationTestCase))    
-    suite.addTest(unittest.makeSuite(ShortURLServiceTestCase))
+    suite.addTest(unittest.makeSuite(ServiceActivationTestCase))
+    suite.addTest(unittest.makeSuite(CustomShortURLServiceTestCase))
     return suite

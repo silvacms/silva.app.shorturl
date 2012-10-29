@@ -15,6 +15,7 @@ import BTrees
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 
+from silva.core.interfaces.service import ISilvaLocalService
 from silva.core.services.base import SilvaService
 from silva.app.forest.interfaces import IForestApplication
 from silva.app.forest.interfaces import IForestWillBeDeactivatedEvent
@@ -25,6 +26,7 @@ from zeam.form import silva as silvaforms
 from zeam.form.ztk.actions import EditAction
 
 from .interfaces import IShortURLService, IShortURLApplication
+from .interfaces import ICustomShortURLService
 from .codec import ShortURLCodec
 
 
@@ -37,17 +39,66 @@ def generate_alphabet():
     return str(alphabet)
 
 
-class ShortURLService(SilvaService):
+class CustomShortURLService(SilvaService):
+
+    grok.baseclass()
+    grok.implements(ICustomShortURLService)
+
+    security = ClassSecurityInfo()
+    family = BTrees.family32
+
+    def __init__(self, id):
+        self._custom_url_index = self.family.OI.BTree()
+        self._custom_url_reverse_index = self.family.IO.BTree()
+
+    security.declareProtected(
+        'View Management Screens', 'register_custom_short_path')
+    def register_custom_short_path(self, short_path, content):
+        intids = getUtility(IIntIds)
+        id = intids.register(content)
+        self._custom_url_index[short_path] = id
+        self._custom_url_reverse_index[id] = short_path
+
+    def get_custom_short_path(self, content):
+        intids = getUtility(IIntIds)
+        id = intids.register(content)
+        try:
+            return self._custom_url_reverse_index[id]
+        except KeyError:
+            return None
+
+    def get_content_from_custom_short_path(self, short_path):
+        try:
+            id = self._custom_url_index[short_path]
+        except KeyError:
+            return None
+        intids = getUtility(IIntIds)
+        return intids.queryObject(id)
+
+
+InitializeClass(CustomShortURLService)
+
+
+class ShortURLLocalService(CustomShortURLService):
+    """ Local service to store custom short URLs.
+    """
+    meta_type = 'Silva Short URL Site Local Service'
+
+    grok.implements(ISilvaLocalService)
+    grok.name('service_shorturls')
+
+
+class ShortURLService(CustomShortURLService):
+    """ Short URL Service.
+    """
     grok.implements(IShortURLService)
     grok.name('service_shorturls')
-    meta_type = 'Silva Shorl URL Service'
+    meta_type = 'Silva Short URL Service'
 
     security = ClassSecurityInfo()
     manage_options = (
         {'label':'Settings', 'action':'manage_settings'},
         ) + SilvaService.manage_options
-
-    family = BTrees.family32
 
     # silvaconf.icon('static/shorturl_service.png')
 
@@ -59,8 +110,6 @@ class ShortURLService(SilvaService):
         super(ShortURLService, self).__init__(id)
         self._alphabet = generate_alphabet()
         self._alphabet_set = set(self._alphabet)
-        self._custom_url_index = self.family.OI.BTree()
-        self._custom_url_reverse_index = self.family.IO.BTree()
         self._short_url_base = None
 
     def _get_codec(self):
@@ -71,7 +120,7 @@ class ShortURLService(SilvaService):
         return self._short_url_base
 
     security.declareProtected(
-    'View Management Screens', 'set_short_url_base')
+        'View Management Screens', 'set_short_url_base')
     def set_short_url_base(self, url):
         self._short_url_base = url.rstrip().rstrip('/') + '/'
 
@@ -100,28 +149,6 @@ class ShortURLService(SilvaService):
         if not self.validate_short_path(short_path):
             return None
         id = self._get_int_id(short_path)
-        intids = getUtility(IIntIds)
-        return intids.queryObject(id)
-
-    def register_custom_short_path(self, short_path, content):
-        intids = getUtility(IIntIds)
-        id = intids.register(content)
-        self._custom_url_index[short_path] = id
-        self._custom_url_reverse_index[id] = short_path
-
-    def get_custom_short_path(self, content):
-        intids = getUtility(IIntIds)
-        id = intids.register(content)
-        try:
-            return self._custom_url_reverse_index[id]
-        except KeyError:
-            return None
-
-    def get_content_from_custom_short_path(self, short_path):
-        try:
-            id = self._custom_url_index[short_path]
-        except KeyError:
-            return None
         intids = getUtility(IIntIds)
         return intids.queryObject(id)
 
