@@ -99,7 +99,6 @@ class RESTCustomShortPathInfo(UIREST):
         })
 
 
-
 class ICustomPathResources(IDefaultBrowserLayer):
     silvaconf.resource('custom_path.js')
     silvaconf.resource('custom_path.css')

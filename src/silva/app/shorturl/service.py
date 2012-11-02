@@ -130,7 +130,10 @@ class CustomShortURLService(SilvaService):
 
         site = aq_parent(self)
         url_adapter = getMultiAdapter((site, request), IContentURL)
-        url = url_adapter.url(host=self.get_custom_short_url_base())
+        host = self.get_custom_short_url_base()
+        if host is not None:
+            host = host.rstrip('/')
+        url = url_adapter.url(host=host)
         return url.rstrip('/') + '/' + short_path
 
     security.declareProtected(

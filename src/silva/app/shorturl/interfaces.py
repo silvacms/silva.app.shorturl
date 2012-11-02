@@ -20,6 +20,18 @@ class ICustomShortURLService(ISilvaService):
         """ Retrieve content from custom short path.
         """
 
+    def get_custom_short_url(content, request):
+        """ Retrieve the custom short url for the content.
+        """
+
+    def get_custom_short_url_base():
+        """ Retrieve the base URL for custom URLs
+        """
+
+    def set_custom_short_url_base(url):
+        """ Set the custom short URL base.
+        """
+
 
 class IShortURLService(ICustomShortURLService):
 
@@ -29,6 +41,10 @@ class IShortURLService(ICustomShortURLService):
 
     def get_content_from_short_path(short_path):
         """ Retrieve content from short path. 
+        """
+
+    def get_short_url(content):
+        """ Retrieve short url for content.
         """
 
     def get_short_url_base():
@@ -59,6 +75,7 @@ class IShortURLService(ICustomShortURLService):
         """ Deactivate the service.
         """
 
+
 class IShortURLApplication(IForestApplication):
-    """ Marker for zope site to configure.
+    """ Marker for zope site to allow short URL traversing.
     """

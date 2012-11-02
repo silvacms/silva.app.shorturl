@@ -85,6 +85,7 @@ class CustomShortURLServiceTestCase(unittest.TestCase):
             factory.manage_addMockupVersionedContent('ST', 'Some Content')
 
 
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ServiceActivationTestCase))
