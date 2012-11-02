@@ -1,0 +1,11 @@
+<div class="custom-path-widget">
+    <input type="text" value="#" id="#" name="#" class="#"
+           tal:attributes="name widget.identifier;
+                           value widget.inputValue();
+                           id widget.htmlId();
+                           class widget.htmlClass();
+                           widget.htmlAttributes()" />
+    <div class="custom-path-info" style="display: none">
+
+    </div>
+</div>

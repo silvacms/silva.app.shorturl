@@ -3,21 +3,29 @@
 
 from five import grok
 
-from zope.interface import Interface
 from zope import component
 from zope import schema
-from zope.cachedescriptors.property import Lazy
-from zope.location.interfaces import ISite
-from zope.traversing.browser import absoluteURL
 from zope.app.container.interfaces import INameChooser
+from zope.cachedescriptors.property import Lazy
+from zope.interface import Interface
+from zope.intid.interfaces import IIntIds
+from zope.location.interfaces import ISite
+from zope.publisher.interfaces.browser import IDefaultBrowserLayer
+from zope.traversing.browser import absoluteURL
 
-from silva.core.views import views as silvaviews
+from silva.core import conf as silvaconf
 from silva.core.interfaces import ISilvaObject, ContentError
-from zeam.form import silva as silvaforms
+from silva.core.interfaces.adapters import IIconResolver
 from silva.core.smi.settings import Settings
+from silva.core.views import views as silvaviews
+from silva.fanstatic import need
 from silva.translations import translate as _
+from silva.ui.rest import UIREST
+from zeam.form import silva as silvaforms
+from zeam.form.base.widgets import FieldWidget
+from zeam.form.ztk.widgets.textline import TextLineField
 
-from .interfaces import IShortURLService
+from .interfaces import IShortURLService, ICustomShortURLService
 from .service import closest_custom_short_url_service, closest_site
 
 
@@ -39,17 +47,17 @@ class ShortURLInformation(silvaviews.Viewlet):
         return self.service is not None
 
     def update(self):
-        if not self.available():
-            return
-        self.short_url = (self.service.get_short_url_base() or '') + \
-            self.service.get_short_path(self.context)
-        custom_short_path = self.custom_short_url_service.get_custom_short_path(
-            self.context)
+        self.short_url = None
         self.custom_short_url = None
-        if custom_short_path is not None:
-            self.custom_short_url = absoluteURL(
-                closest_site(self.custom_short_url_service),
-                self.request).rstrip('/') + '/' + custom_short_path
+
+        if self.service.is_active():
+            self.short_url = self.service.get_short_url(self.context)
+
+        if self.custom_short_url_service is not None:
+            self.custom_short_url = \
+                self.custom_short_url_service.get_custom_short_url(
+                    self.context,
+                    self.request)
 
 
 class ShortURLFields(Interface):
@@ -69,6 +77,57 @@ def validate_custom_path(value, form):
     return None
 
 
+class RESTCustomShortPathInfo(UIREST):
+    grok.context(ICustomShortURLService)
+    grok.require('silva.ReadSilvaContent')
+    grok.name('silva.app.shorturl.custom_path_lookup')
+
+    def GET(self, custom_path):
+        content = self.context.get_content_from_custom_short_path(custom_path)
+        if content is None:
+            return self.json_response(None)
+        int_id = component.getUtility(IIntIds).register(content)
+        return self.json_response({
+            'id': content.getId(),
+            'intid': int_id,
+            'type': content.meta_type,
+            'url': absoluteURL(content, self.request),
+            'path': self.get_content_path(content),
+            'icon': IIconResolver(self.request).get_content_url(content),
+            'title': content.get_title_or_id_editable(),
+            'short_title': content.get_short_title_editable()
+        })
+
+
+
+class ICustomPathResources(IDefaultBrowserLayer):
+    silvaconf.resource('custom_path.js')
+    silvaconf.resource('custom_path.css')
+
+
+class CustomPathWidget(FieldWidget):
+    MODE = 'custom_path'
+    grok.adapts(TextLineField, Interface, Interface)
+    grok.name(MODE)
+
+    def update(self):
+        super(CustomPathWidget, self).update()
+        need(ICustomPathResources)
+        int_id = component.getUtility(IIntIds).register(self.form.context)
+        self._htmlAttributes['data-lookup-url'] = self.lookup_url
+        self._htmlAttributes['data-target-id'] = str(int_id)
+
+    @Lazy
+    def service(self):
+        service = closest_custom_short_url_service(self.form.context)
+        return service
+
+    @Lazy
+    def lookup_url(self):
+        return absoluteURL(self.service, self.request) + \
+            '/++rest++silva.app.shorturl.custom_path_lookup?custom_path='
+
+
 class ShortURLForm(silvaforms.SMISubForm):
 
     label = _(u'Short URL')
@@ -77,6 +136,7 @@ class ShortURLForm(silvaforms.SMISubForm):
     grok.context(ISilvaObject)
     grok.order(100)
     fields = silvaforms.Fields(ShortURLFields)
+    fields['custom_path'].mode = 'custom_path'
 
     ignoreContent = True
     ignoreRequest = True

@@ -6,7 +6,7 @@ from copy import copy
 
 from five import grok
 from zope.intid.interfaces import IIntIds
-from zope.component import getUtility, queryUtility
+from zope.component import getUtility, queryUtility, getMultiAdapter
 from zope.interface import alsoProvides, noLongerProvides, Interface
 from zope.location.interfaces import ISite
 from zope import schema
@@ -20,6 +20,7 @@ from App.class_init import InitializeClass
 
 from silva.core.interfaces.service import ISilvaLocalService
 from silva.core.services.base import SilvaService
+from silva.core.views.interfaces import IContentURL
 from silva.app.forest.interfaces import IForestApplication
 from silva.app.forest.interfaces import IForestWillBeDeactivatedEvent
 
@@ -31,15 +32,6 @@ from zeam.form.ztk.actions import EditAction
 from .interfaces import IShortURLService, IShortURLApplication
 from .interfaces import ICustomShortURLService
 from .codec import ShortURLCodec
-
-
-BASE_ALPHABET = bytearray("abcdefghijkmnpqrstwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
-
-
-def generate_alphabet():
-    alphabet = copy(BASE_ALPHABET)
-    random.shuffle(alphabet)
-    return str(alphabet)
 
 
 def closest_custom_short_url_service(location):
@@ -61,6 +53,15 @@ def closest_site(location):
     return None
 
 
+BASE_ALPHABET = bytearray("abcdefghijkmnpqrstwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
+
+
+def generate_alphabet():
+    alphabet = copy(BASE_ALPHABET)
+    random.shuffle(alphabet)
+    return str(alphabet)
+
+
 class CustomShortURLService(SilvaService):
 
     grok.baseclass()
@@ -68,6 +69,12 @@ class CustomShortURLService(SilvaService):
 
     security = ClassSecurityInfo()
     family = BTrees.family32
+
+    _custom_short_url_base = None
+
+    manage_options = (
+        {'label':'Settings', 'action':'manage_settings'},
+        ) + SilvaService.manage_options
 
     def __init__(self, id):
         self._custom_url_index = self.family.OI.BTree()
@@ -100,7 +107,6 @@ class CustomShortURLService(SilvaService):
             return False
         return True
 
-
     def get_custom_short_path(self, content):
         id = self.intids.register(content)
         try:
@@ -114,6 +120,23 @@ class CustomShortURLService(SilvaService):
         except KeyError:
             return None
         return self.intids.queryObject(id)
+
+    def get_custom_short_url_base(self):
+        return self._custom_short_url_base
+
+    def get_custom_short_url(self, content, request):
+        short_path = self.get_custom_short_path(content)
+        if short_path is None: return None
+
+        site = aq_parent(self)
+        url_adapter = getMultiAdapter((site, request), IContentURL)
+        url = url_adapter.url(host=self.get_custom_short_url_base())
+        return url.rstrip('/') + '/' + short_path
+
+    security.declareProtected(
+        'View Management Screens', 'set_custom_short_url_base')
+    def set_custom_short_url_base(self, url):
+        self._custom_short_url_base = url.rstrip().rstrip('/') + '/'
 
 
 InitializeClass(CustomShortURLService)
@@ -150,11 +173,14 @@ class ShortURLService(CustomShortURLService):
         super(ShortURLService, self).__init__(id)
         self._alphabet = generate_alphabet()
         self._alphabet_set = set(self._alphabet)
-        self._short_url_base = None
 
-    def _get_codec(self):
-        return ShortURLCodec(alphabet=self._alphabet,
-                             block_size=self._block_size)
+    def get_short_url(self, content):
+        base = self.get_short_url_base()
+        if base is None:
+            return None
+        short_path = self.get_short_path(content)
+        if short_path is None: return None
+        return self.get_short_url_base() + short_path
 
     def get_short_url_base(self):
         return self._short_url_base
@@ -163,6 +189,10 @@ class ShortURLService(CustomShortURLService):
         'View Management Screens', 'set_short_url_base')
     def set_short_url_base(self, url):
         self._short_url_base = url.rstrip().rstrip('/') + '/'
+
+    def _get_codec(self):
+        return ShortURLCodec(alphabet=self._alphabet,
+                             block_size=self._block_size)
 
     def get_silva_path(self):
         return self.get_root().getPhysicalPath()[1:]
@@ -234,28 +264,54 @@ def deactivate_shorturl_on_forest_deactivation(event):
         service.deactivate()
 
 
+class ShortURLServiceForm(silvaforms.ZMIComposedForm):
+    grok.name('manage_settings')
+    grok.context(ICustomShortURLService)
+
+    label = _(u"Settings")
+    description = _(u"Configure short URL traversing.")
+
+
 class IShortURLSettingsFields(Interface):
 
-    short_url_base = schema.TextLine(title=u"Base URL for short URLs")
+    short_url_base = schema.TextLine(
+        title=u"Base URL for short URLs")
+    custom_short_url_base = schema.TextLine(
+        title=u"Base URL for custom short URLs")
 
 
-class ShortURLActivationSettings(silvaforms.ZMIForm):
-    """Activate the short url
-    """
-    grok.name('manage_settings')
-    grok.context(IShortURLService)
+class ShortURLDomainSettings(silvaforms.ZMISubForm):
+    grok.view(ShortURLServiceForm)
+    grok.context(ICustomShortURLService)
     grok.order(10)
+
+    label = _(u"Base URLs")
+    description = _(u"Configure base URLS")
 
     ignoreContent = False
     ignoreRequest = True
 
     dataManager = silvaforms.SilvaDataManager
-
     fields = silvaforms.Fields(IShortURLSettingsFields)
-    label = _(u"Settings")
-    description = _(u"Configure and activate short url traversing.")
+    actions = silvaforms.Actions(EditAction('Save Changes'))
 
-    actions = silvaforms.Actions(EditAction('Save'))
+    fields['short_url_base'].available = \
+        lambda f: IShortURLService.providedBy(f.context)
+
+
+class ShortURLActivationSettings(silvaforms.ZMISubForm):
+    """Activate the short url
+    """
+    grok.view(ShortURLServiceForm)
+    grok.context(IShortURLService)
+    grok.order(20)
+
+    label = _(u'Activation')
+    description = _(u"(De)Activate traversal on top level "
+        "domain for automatic short urls")
+
+    ignoreContent = False
+    ignoreRequest = True
 
     @silvaforms.action(
         _(u"Activate"),
@@ -263,6 +319,7 @@ class ShortURLActivationSettings(silvaforms.ZMIForm):
     def activate(self):
         try:
             self.context.activate()
+            self.status = _(u'Activated.')
         except ValueError as error:
             self.status = error.args[0]
             return silvaforms.FAILURE
@@ -274,6 +331,7 @@ class ShortURLActivationSettings(silvaforms.ZMIForm):
     def deactivate(self):
         try:
             self.context.deactivate()
+            self.status = _(u'Deactivated.')
         except ValueError as error:
             self.status = error.args[0]
             return silvaforms.FAILURE
