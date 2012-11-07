@@ -47,6 +47,9 @@ class ShortURLInformation(silvaviews.Viewlet):
         return self.service is not None
 
     def update(self):
+        if not self.available():
+            return
+
         self.short_url = None
         self.custom_short_url = None
 
