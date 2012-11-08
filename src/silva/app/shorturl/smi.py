@@ -163,7 +163,7 @@ class ShortURLForm(silvaforms.SMISubForm):
     def custom_short_url_service(self):
         return closest_custom_short_url_service(self.context)
 
-    @silvaforms.action(title=_(u"Clear custom path"), htmlAttributes={
+    @silvaforms.action(title=_(u"Clear custom path"), **{
         'data-confirmation': _(u'Are you sure you want to clear'
                                 ' the custom short path ?')})
     def clear_custom_path(self):
