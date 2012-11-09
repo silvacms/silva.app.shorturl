@@ -44,16 +44,14 @@ class ShortURLInformation(silvaviews.Viewlet):
         return closest_custom_short_url_service(self.context)
 
     def available(self):
-        return self.service is not None
+        return self.short_url is not None or \
+            self.custom_short_url is not None
 
     def update(self):
-        if not self.available():
-            return
-
         self.short_url = None
         self.custom_short_url = None
 
-        if self.service.is_active():
+        if self.service is not None and self.service.is_active():
             self.short_url = self.service.get_short_url(self.context)
 
         if self.custom_short_url_service is not None:
