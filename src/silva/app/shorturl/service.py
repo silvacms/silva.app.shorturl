@@ -171,6 +171,7 @@ class ShortURLService(CustomShortURLService):
     _min_length = 4
     _block_size = 24
     _short_url_base = None
+    _rewrite_base = None
 
     def __init__(self, id):
         super(ShortURLService, self).__init__(id)
@@ -184,6 +185,14 @@ class ShortURLService(CustomShortURLService):
         short_path = self.get_short_path(content)
         if short_path is None: return None
         return self.get_short_url_base() + short_path
+
+    def get_rewrite_base(self):
+        return self._rewrite_base
+
+    security.declareProtected(
+        'View Management Screens', 'set_rewrite_base')
+    def set_rewrite_base(self, url):
+        self._rewrite_base = url.rstrip().rstrip('/') + '/'
 
     def get_short_url_base(self):
         return self._short_url_base
@@ -279,6 +288,8 @@ class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
         title=u"Base URL for short URLs")
+    rewrite_base = schema.TextLine(
+        title=u"Base URL for redirecting short URLs")
     custom_short_url_base = schema.TextLine(
         title=u"Base URL for custom short URLs")
 

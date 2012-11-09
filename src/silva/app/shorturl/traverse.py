@@ -38,13 +38,15 @@ class Redirect(object):
     __parent__ = None
     __name__ = None
 
-    def __init__(self, content, request):
+    def __init__(self, content, request, service):
         self.content = content
         self.request = request
+        self.service = service
 
     def __call__(self):
         url = absoluteURL(self.content, self.request)
-        self.request.response.redirect(url, status=301)        
+        self.request.response.redirect(url, status=301,
+            host=self.service.get_rewrite_base())
         return ''
 
 
@@ -65,7 +67,7 @@ class Traverser(grok.MultiAdapter):
         path_component = path.pop()
         content = service.get_content(path_component)
         if content is not None:
-            view = Redirect(content, self.request)
+            view = Redirect(content, self.request, service)
             view.__parent__ = self.context
             view.__name__ = path_component
             chain = aq_chain(content)
