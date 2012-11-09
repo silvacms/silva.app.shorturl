@@ -44,9 +44,9 @@ class Redirect(object):
         self.service = service
 
     def __call__(self):
-        url = absoluteURL(self.content, self.request)
-        self.request.response.redirect(url, status=301,
+        url = absoluteURL(self.content, self.request,
             host=self.service.get_rewrite_base())
+        self.request.response.redirect(url, status=301)
         return ''
 
 
