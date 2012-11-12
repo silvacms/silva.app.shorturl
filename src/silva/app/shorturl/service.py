@@ -121,9 +121,6 @@ class CustomShortURLService(SilvaService):
             return None
         return self.intids.queryObject(id)
 
-    def get_custom_short_url_base(self):
-        return self._custom_short_url_base
-
     def get_custom_short_url(self, content, request):
         short_path = self.get_custom_short_path(content)
         if short_path is None: return None
@@ -131,15 +128,17 @@ class CustomShortURLService(SilvaService):
         site = aq_parent(self)
         url_adapter = getMultiAdapter((site, request), IContentURL)
         host = self.get_custom_short_url_base()
-        if host is not None:
-            host = host.rstrip('/')
         url = url_adapter.url(host=host)
         return url.rstrip('/') + '/' + short_path
+
+    def get_custom_short_url_base(self):
+        return self._custom_short_url_base
 
     security.declareProtected(
         'View Management Screens', 'set_custom_short_url_base')
     def set_custom_short_url_base(self, url):
-        self._custom_short_url_base = url.rstrip().rstrip('/') + '/'
+        self._custom_short_url_base = url.rstrip().rstrip('/')
+
 
 
 InitializeClass(CustomShortURLService)
@@ -171,7 +170,7 @@ class ShortURLService(CustomShortURLService):
     _min_length = 4
     _block_size = 24
     _short_url_base = None
-    _rewrite_base = None
+    _short_url_target_host = None
 
     def __init__(self, id):
         super(ShortURLService, self).__init__(id)
@@ -184,15 +183,15 @@ class ShortURLService(CustomShortURLService):
             return None
         short_path = self.get_short_path(content)
         if short_path is None: return None
-        return self.get_short_url_base() + short_path
+        return self.get_short_url_base() + '/' + short_path
 
-    def get_rewrite_base(self):
-        return self._rewrite_base
+    def get_short_url_target_host(self):
+        return self._short_url_target_host
 
     security.declareProtected(
-        'View Management Screens', 'set_rewrite_base')
-    def set_rewrite_base(self, url):
-        self._rewrite_base = url.rstrip().rstrip('/') + '/'
+        'View Management Screens', 'set_short_url_target_host')
+    def set_short_url_target_host(self, url):
+        self._short_url_target_host = url.rstrip().rstrip('/')
 
     def get_short_url_base(self):
         return self._short_url_base
@@ -200,7 +199,7 @@ class ShortURLService(CustomShortURLService):
     security.declareProtected(
         'View Management Screens', 'set_short_url_base')
     def set_short_url_base(self, url):
-        self._short_url_base = url.rstrip().rstrip('/') + '/'
+        self._short_url_base = url.rstrip().rstrip('/')
 
     def _get_codec(self):
         return ShortURLCodec(alphabet=self._alphabet,
@@ -288,8 +287,8 @@ class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
         title=u"Base URL for short URLs")
-    rewrite_base = schema.TextLine(
-        title=u"Base URL for redirecting short URLs")
+    short_url_target_host = schema.TextLine(
+        title=u"Base URL for redirecting short URLs to")
     custom_short_url_base = schema.TextLine(
         title=u"Base URL for custom short URLs")
 
@@ -310,6 +309,8 @@ class ShortURLDomainSettings(silvaforms.ZMISubForm):
     actions = silvaforms.Actions(EditAction('Save Changes'))
 
     fields['short_url_base'].available = \
+        lambda f: IShortURLService.providedBy(f.context)
+    fields['short_url_target_host'].available = \
         lambda f: IShortURLService.providedBy(f.context)
 
 

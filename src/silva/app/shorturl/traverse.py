@@ -3,7 +3,6 @@
 
 from five import grok
 from zope import component
-from zope.traversing.browser import absoluteURL
 from zope.publisher.interfaces.browser import IBrowserRequest
 
 from infrae.wsgi.interfaces import IRequest, ITraverser
@@ -13,6 +12,7 @@ from silva.app.forest.virtualhosting import VirtualHosting
 from silva.core.layout.traverser import SkinnyTraverser
 from zope.location.interfaces import ISite
 
+from silva.core.views.interfaces import IContentURL
 from silva.core.interfaces.errors import ContentError
 from silva.translations import translate as _
 from Products.Silva.mangle import SilvaNameChooser
@@ -38,14 +38,15 @@ class Redirect(object):
     __parent__ = None
     __name__ = None
 
-    def __init__(self, content, request, service):
+    def __init__(self, content, request, host=None):
         self.content = content
         self.request = request
-        self.service = service
+        self.host = host
 
     def __call__(self):
-        url = absoluteURL(self.content, self.request,
-            host=self.service.get_rewrite_base())
+        url_adapter = component.getMultiAdapter(
+            (self.content, self.request), IContentURL)
+        url = url_adapter.url(host=self.host)
         self.request.response.redirect(url, status=301)
         return ''
 
@@ -67,7 +68,8 @@ class Traverser(grok.MultiAdapter):
         path_component = path.pop()
         content = service.get_content(path_component)
         if content is not None:
-            view = Redirect(content, self.request, service)
+            view = Redirect(content, self.request,
+                host=service.get_short_url_target_host())
             view.__parent__ = self.context
             view.__name__ = path_component
             chain = aq_chain(content)
@@ -93,7 +95,7 @@ class ShortURLVirtualHosting(VirtualHosting):
         except BadRequest:
             pass
         if service is not None:
-            if service.get_short_url_base() == url.rstrip('/') + '/':
+            if service.get_short_url_base() == url.rstrip('/'):
                 return ShortURLRoot(root), method, path
 
         return super(ShortURLVirtualHosting, self).__call__(method, path)
@@ -125,7 +127,8 @@ class ShortURLSitePublishTraverse(SkinnyTraverser, grok.MultiAdapter):
         if service is not None and ICustomShortURLService.providedBy(service):
             content = service.get_content_from_custom_short_path(name)
             if content is not None:
-                view = Redirect(content, self.request)
+                view = Redirect(content, self.request,
+                    host=service.get_custom_short_url_base())
                 view.__parent__ = self.context
                 view.__name__ = name
                 return view

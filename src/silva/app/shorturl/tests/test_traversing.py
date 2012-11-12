@@ -40,6 +40,7 @@ class TraversingTestCase(unittest.TestCase):
     def test_traverse_with_short_url(self):
         short_path = self.service.get_short_path(self.content)
         with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
             browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
             browser.options.follow_redirect = False
             self.assertEqual(301, browser.open("/" + short_path))
@@ -48,6 +49,7 @@ class TraversingTestCase(unittest.TestCase):
 
     def test_traverse_on_vhost(self):
         with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
             browser.options.follow_redirect = False
             self.assertEqual(200, browser.open("/root/folder/something"))
 
@@ -57,6 +59,7 @@ class TraversingTestCase(unittest.TestCase):
 
         short_path = self.service.get_short_path(self.content)
         with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
             browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
             browser.options.follow_redirect = False
             self.assertEqual(301, browser.open("/" + short_path))
@@ -93,6 +96,7 @@ class LocalSiteCustomURLTraversingTestCase(unittest.TestCase):
         custom short path.
         """
         with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
             browser.options.follow_redirect = False
             self.assertEqual(301,
                 browser.open('http://localhost/root/pub/ShortCut'))
@@ -103,6 +107,7 @@ class LocalSiteCustomURLTraversingTestCase(unittest.TestCase):
         """ Normal traversing should continue to work.
         """
         with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
             browser.options.follow_redirect = False
             self.assertEqual(200,
                 browser.open('http://localhost/root/pub/something'))
@@ -116,10 +121,12 @@ class LocalSiteCustomURLTraversingTestCase(unittest.TestCase):
                 'http://infrae.com/',
                 [],
                 [Rewrite('/', '/root/pub', None)])])
+        self.local_service.set_custom_short_url_base('http://infrae.com')
 
         with self.layer.get_browser() as browser:
             browser.set_request_header('X-VHM-URL', 'http://infrae.com/')
             browser.options.follow_redirect = False
+            browser.options.handle_errors = False
             self.assertEqual(301, browser.open("/ShortCut"))
             self.assertEqual(browser.headers['location'],
                             'http://infrae.com/something')
