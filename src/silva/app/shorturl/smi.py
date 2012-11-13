@@ -2,11 +2,10 @@
 # See also LICENSE.txt
 
 from five import grok
-
 from zope import component
 from zope import schema
-from zope.app.container.interfaces import INameChooser
 from zope.cachedescriptors.property import Lazy
+from zope.container.interfaces import INameChooser
 from zope.interface import Interface
 from zope.intid.interfaces import IIntIds
 from zope.location.interfaces import ISite
