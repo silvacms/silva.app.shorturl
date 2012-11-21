@@ -5,7 +5,6 @@ from five import grok
 from zope import component
 from zope import schema
 from zope.cachedescriptors.property import Lazy
-from zope.container.interfaces import INameChooser
 from zope.interface import Interface
 from zope.intid.interfaces import IIntIds
 from zope.location.interfaces import ISite
@@ -13,7 +12,7 @@ from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.traversing.browser import absoluteURL
 
 from silva.core import conf as silvaconf
-from silva.core.interfaces import ISilvaObject, ContentError
+from silva.core.interfaces import ISilvaObject, ContentError, ISilvaNameChooser
 from silva.core.interfaces.adapters import IIconResolver
 from silva.core.smi.settings import Settings
 from silva.core.views import views as silvaviews
@@ -71,7 +70,7 @@ def validate_custom_path(value, form):
     try:
         service = closest_custom_short_url_service(form.context)
         site = closest_site(service)
-        INameChooser(site).checkName(value, None)
+        ISilvaNameChooser(site).checkName(value, None)
     except ContentError as e:
         return e.reason
     return None

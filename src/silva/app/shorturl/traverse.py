@@ -13,9 +13,6 @@ from silva.core.layout.traverser import SkinnyTraverser
 from zope.location.interfaces import ISite
 
 from silva.core.views.interfaces import IContentURL
-from silva.core.interfaces.errors import ContentError
-from silva.translations import translate as _
-from Products.Silva.mangle import SilvaNameChooser
 
 from .interfaces import IShortURLService, IShortURLApplication
 from .interfaces import ICustomShortURLService
@@ -99,22 +96,6 @@ class ShortURLVirtualHosting(VirtualHosting):
                 return ShortURLRoot(root), method, path
 
         return super(ShortURLVirtualHosting, self).__call__(method, path)
-
-
-class ShortURLNameChooser(SilvaNameChooser):
-    """ Prevent creating objects that collide with custom short URLs.
-    """
-    grok.context(ISite)
-
-    def checkName(self, name, content):
-        service = self.container._getOb('service_shorturls', None)
-        if service is not None and ICustomShortURLService.providedBy(service):
-            content = service.get_content_from_custom_short_path(name)
-            if content is not None:
-                raise ContentError(
-                    _(u"A custom short URL `${name}` already exists.",
-                        mapping=dict(name=name)), self.container)
-        return super(ShortURLNameChooser, self)
 
 
 class ShortURLSitePublishTraverse(SkinnyTraverser, grok.MultiAdapter):

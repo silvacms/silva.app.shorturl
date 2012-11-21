@@ -18,6 +18,7 @@ from Acquisition import aq_parent
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 
+from silva.core.interfaces import ISilvaNameChooser, ContentError
 from silva.core.interfaces.service import ISilvaLocalService
 from silva.core.services.base import SilvaService
 from silva.core.views.interfaces import IContentURL
@@ -34,10 +35,13 @@ from .interfaces import ICustomShortURLService
 from .codec import ShortURLCodec
 
 
+SERVICE_NAME = 'service_shorturls'
+
+
 def closest_custom_short_url_service(location):
     while location:
         if ISite.providedBy(location):
-            service = location._getOb('service_shorturls', None)
+            service = location._getOb(SERVICE_NAME, None)
             if service is not None and \
                     ICustomShortURLService.providedBy(service):
                 return service
@@ -144,20 +148,45 @@ class CustomShortURLService(SilvaService):
 InitializeClass(CustomShortURLService)
 
 
+class CustomURLNameChooser(grok.Subscription):
+    grok.implements(ISilvaNameChooser)
+    grok.context(ISite)
+    grok.order(10000)
+
+    def __init__(self, context):
+        self.context = context
+
+    def checkName(self, name, content):
+        service = self.context._getOb(SERVICE_NAME, None)
+        if service is not None and ICustomShortURLService.providedBy(service):
+            content = service.get_content_from_custom_short_path(name)
+            if content is not None:
+                raise ContentError(
+                    _(u"A custom short URL `${name}` already exists.",
+                        mapping=dict(name=name)), self.context)
+
+    def chooseName(self, name, content, **kw):
+        return name
+
+
 class ShortURLLocalService(CustomShortURLService):
     """ Local service to store custom short URLs.
     """
     meta_type = 'Silva Short URL Site Local Service'
 
     grok.implements(ISilvaLocalService)
-    grok.name('service_shorturls')
+    grok.name(SERVICE_NAME)
 
 
+InitializeClass(ShortURLLocalService)
+
+
+SERVICE_NAME = 'service_shorturls'
 class ShortURLService(CustomShortURLService):
     """ Short URL Service.
     """
     grok.implements(IShortURLService)
-    grok.name('service_shorturls')
+    grok.name(SERVICE_NAME)
     meta_type = 'Silva Short URL Service'
 
     security = ClassSecurityInfo()
