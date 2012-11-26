@@ -18,6 +18,7 @@ from Acquisition import aq_parent
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 
+from silva.core import conf as silvaconf
 from silva.core.interfaces import ISilvaNameChooser, ContentError
 from silva.core.interfaces.service import ISilvaLocalService
 from silva.core.services.base import SilvaService
@@ -181,7 +182,6 @@ class ShortURLLocalService(CustomShortURLService):
 InitializeClass(ShortURLLocalService)
 
 
-SERVICE_NAME = 'service_shorturls'
 class ShortURLService(CustomShortURLService):
     """ Short URL Service.
     """
@@ -194,7 +194,7 @@ class ShortURLService(CustomShortURLService):
         {'label':'Settings', 'action':'manage_settings'},
         ) + SilvaService.manage_options
 
-    # silvaconf.icon('static/shorturl_service.png')
+    silvaconf.icon('static/%s.png' % SERVICE_NAME)
 
     _min_length = 4
     _block_size = 24
