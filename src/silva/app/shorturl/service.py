@@ -263,7 +263,9 @@ class ShortURLService(CustomShortURLService):
         return intids.queryObject(id)
 
     def validate_short_path(self, short_path):
-        return not(set(short_path) - self._alphabet_set)
+        if short_path:
+            return not(set(short_path) - self._alphabet_set)
+        return False
 
     security.declareProtected(
         'View Management Screens', 'is_active')

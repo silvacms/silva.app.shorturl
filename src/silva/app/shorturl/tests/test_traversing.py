@@ -47,6 +47,11 @@ class TraversingTestCase(unittest.TestCase):
             self.assertEqual(browser.headers['location'],
                             'http://localhost/root/folder/something')
 
+    def test_traverse_on_root_path(self):
+        with self.layer.get_browser() as browser:
+            browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
+            self.assertEqual(404, browser.open('/'))
+
     def test_traverse_with_short_url_with_forest(self):
         self.service.set_short_url_target_host('http://infrae.com')
         self.forest_service.set_hosts(
