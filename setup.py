@@ -9,6 +9,7 @@ version = '3.0'
 
 tests_require = [
     'Products.Silva [test]',
+    'silva.app.forest [test]',
     ]
 
 setup(name='silva.app.shorturl',
@@ -39,8 +40,7 @@ setup(name='silva.app.shorturl',
         'Products.Silva',
         'silva.core.conf',
         'silva.core.views',
-        'silva.core.services',
-        'silva.app.forest'
+        'silva.core.services'
         ],
       tests_require=tests_require,
       extras_require={'test': tests_require},

@@ -6,8 +6,8 @@ from copy import copy
 
 from five import grok
 from zope.intid.interfaces import IIntIds
-from zope.component import getUtility, queryUtility, getMultiAdapter
-from zope.interface import alsoProvides, noLongerProvides, Interface
+from zope.component import getUtility, getMultiAdapter
+from zope.interface import Interface
 from zope.location.interfaces import ISite
 from zope import schema
 from zope.cachedescriptors.property import Lazy
@@ -23,20 +23,16 @@ from silva.core.interfaces import ISilvaNameChooser, ContentError
 from silva.core.interfaces.service import ISilvaLocalService
 from silva.core.services.base import SilvaService
 from silva.core.views.interfaces import IContentURL
-from silva.app.forest.interfaces import IForestApplication
-from silva.app.forest.interfaces import IForestWillBeDeactivatedEvent
 
 from silva.translations import translate as _
 
 from zeam.form import silva as silvaforms
 from zeam.form.ztk.actions import EditAction
 
-from .interfaces import IShortURLService, IShortURLApplication
-from .interfaces import ICustomShortURLService
+from .interfaces import IShortURLService, IShortURLResolverService
 from .codec import ShortURLCodec
 
-
-SERVICE_NAME = 'service_shorturls'
+from . import SERVICE_NAME, SHORT_URL_PREFIX
 
 
 def closest_custom_short_url_service(location):
@@ -44,7 +40,7 @@ def closest_custom_short_url_service(location):
         if ISite.providedBy(location):
             service = location._getOb(SERVICE_NAME, None)
             if service is not None and \
-                    ICustomShortURLService.providedBy(service):
+                    IShortURLService.providedBy(service):
                 return service
         location = aq_parent(location)
     return None
@@ -67,27 +63,50 @@ def generate_alphabet():
     return str(alphabet)
 
 
-class CustomShortURLService(SilvaService):
+class ShortURLService(SilvaService):
+    """ Short url service.
+    """
+    grok.name(SERVICE_NAME)
+    grok.implements(IShortURLService, ISilvaLocalService)
+    silvaconf.icon('static/%s.png' % SERVICE_NAME)
 
-    grok.baseclass()
-    grok.implements(ICustomShortURLService)
+    meta_type = 'Short URL Service'
 
     security = ClassSecurityInfo()
     family = BTrees.family32
 
-    _custom_short_url_base = None
+    _short_url_base = None
+    _rewrite_url_base = None
 
     manage_options = (
         {'label':'Settings', 'action':'manage_settings'},
-        ) + SilvaService.manage_options
+    ) + SilvaService.manage_options
 
     def __init__(self, id):
+        super(ShortURLService, self).__init__(id)
         self._custom_url_index = self.family.OI.BTree()
         self._custom_url_reverse_index = self.family.IO.BTree()
 
     @Lazy
+    def _resolver(self):
+        return getUtility(IShortURLResolverService)
+
+    @Lazy
     def intids(self):
         return getUtility(IIntIds)
+
+    # shortcuts for resolver
+
+    def get_content(self, short_path):
+        return self._resolver.get_content(short_path)
+
+    def get_short_path(self, content):
+        return self._resolver.get_short_path(content)
+
+    def validate_short_path(self, short_path):
+        return self._resolver.validate_short_path(short_path)
+
+    # --
 
     security.declareProtected(
         'View Management Screens', 'register_custom_short_path')
@@ -126,27 +145,48 @@ class CustomShortURLService(SilvaService):
             return None
         return self.intids.queryObject(id)
 
+    def get_short_url(self, content, request):
+        short_path = self.get_short_path(content)
+        if short_path is None:
+            return None
+        site = aq_parent(self)
+        url_adapter = getMultiAdapter((site, request), IContentURL)
+        url = url_adapter.url(host=self.get_short_url_base())
+        return url.rstrip('/') + '/' + SHORT_URL_PREFIX + short_path
+
     def get_custom_short_url(self, content, request):
         short_path = self.get_custom_short_path(content)
-        if short_path is None: return None
+        if short_path is None:
+            return None
 
         site = aq_parent(self)
         url_adapter = getMultiAdapter((site, request), IContentURL)
-        host = self.get_custom_short_url_base()
-        url = url_adapter.url(host=host)
+        url = url_adapter.url(host=self.get_short_url_base())
         return url.rstrip('/') + '/' + short_path
 
-    def get_custom_short_url_base(self):
-        return self._custom_short_url_base
+    def get_short_url_base(self):
+        return self._short_url_base
 
     security.declareProtected(
-        'View Management Screens', 'set_custom_short_url_base')
-    def set_custom_short_url_base(self, url):
-        self._custom_short_url_base = url.rstrip().rstrip('/')
+        'View Management Screens', 'set_short_url_base')
+    def set_short_url_base(self, url):
+        if url:
+            self._short_url_base = url.rstrip().rstrip('/')
+        else:
+            self._short_url_base = None
 
+    def get_rewrite_url_base(self):
+        return self._rewrite_url_base
 
+    security.declareProtected(
+        'View Management Screens', 'set_rewrite_url_base')
+    def set_rewrite_url_base(self, url):
+        if url:
+            self._rewrite_url_base = url.rstrip().rstrip('/')
+        else:
+            self._rewrite_url_base = None
 
-InitializeClass(CustomShortURLService)
+InitializeClass(ShortURLService)
 
 
 class CustomURLNameChooser(grok.Subscription):
@@ -159,7 +199,7 @@ class CustomURLNameChooser(grok.Subscription):
 
     def checkName(self, name, content):
         service = self.context._getOb(SERVICE_NAME, None)
-        if service is not None and ICustomShortURLService.providedBy(service):
+        if service is not None and IShortURLService.providedBy(service):
             content = service.get_content_from_custom_short_path(name)
             if content is not None:
                 raise ContentError(
@@ -170,65 +210,27 @@ class CustomURLNameChooser(grok.Subscription):
         return name
 
 
-class ShortURLLocalService(CustomShortURLService):
-    """ Local service to store custom short URLs.
+class ShortURLResolverService(SilvaService):
+    """ Service for resolving short urls.
     """
-    meta_type = 'Silva Short URL Site Local Service'
+    grok.implements(IShortURLResolverService)
+    grok.name('service_shorturls_resolver')
 
-    grok.implements(ISilvaLocalService)
-    grok.name(SERVICE_NAME)
-
-
-InitializeClass(ShortURLLocalService)
-
-
-class ShortURLService(CustomShortURLService):
-    """ Short URL Service.
-    """
-    grok.implements(IShortURLService)
-    grok.name(SERVICE_NAME)
-    meta_type = 'Silva Short URL Service'
+    meta_type = 'Silva Short URL Resolver'
 
     security = ClassSecurityInfo()
-    manage_options = (
-        {'label':'Settings', 'action':'manage_settings'},
-        ) + SilvaService.manage_options
-
     silvaconf.icon('static/%s.png' % SERVICE_NAME)
 
     _min_length = 4
     _block_size = 24
-    _short_url_base = None
-    _short_url_target_host = None
 
     def __init__(self, id):
-        super(ShortURLService, self).__init__(id)
+        super(ShortURLResolverService, self).__init__(id)
         self._alphabet = generate_alphabet()
         self._alphabet_set = set(self._alphabet)
 
-    def get_short_url(self, content):
-        base = self.get_short_url_base()
-        if base is None:
-            return None
-        short_path = self.get_short_path(content)
-        if short_path is None: return None
-        return self.get_short_url_base() + '/' + short_path
-
     def get_short_url_target_host(self):
         return self._short_url_target_host
-
-    security.declareProtected(
-        'View Management Screens', 'set_short_url_target_host')
-    def set_short_url_target_host(self, url):
-        self._short_url_target_host = url.rstrip().rstrip('/')
-
-    def get_short_url_base(self):
-        return self._short_url_base
-
-    security.declareProtected(
-        'View Management Screens', 'set_short_url_base')
-    def set_short_url_base(self, url):
-        self._short_url_base = url.rstrip().rstrip('/')
 
     def _get_codec(self):
         return ShortURLCodec(alphabet=self._alphabet,
@@ -267,48 +269,13 @@ class ShortURLService(CustomShortURLService):
             return not(set(short_path) - self._alphabet_set)
         return False
 
-    security.declareProtected(
-        'View Management Screens', 'is_active')
-    def is_active(self):
-        root = self.getPhysicalRoot()
-        if IShortURLApplication.providedBy(root):
-            path = getattr(root, '__silva__', tuple())
-            if path == self.get_silva_path():
-                return True
-        return False
 
-    security.declareProtected(
-        'View Management Screens', 'activate')
-    def activate(self):
-        root = self.getPhysicalRoot()
-        if not IForestApplication.providedBy(root):
-            raise ValueError(
-                _(u"silva.app.forest is not active."))
-        if IShortURLApplication.providedBy(root):
-            raise ValueError(
-                _(u"The feature is already activated for a Silva site."))
-        alsoProvides(root, IShortURLApplication)
-
-    security.declareProtected(
-        'View Management Screens', 'deactivate')
-    def deactivate(self):
-        root = self.getPhysicalRoot()
-        noLongerProvides(root, IShortURLApplication)
-
-
-InitializeClass(ShortURLService)
-
-
-@grok.subscribe(IForestWillBeDeactivatedEvent)
-def deactivate_shorturl_on_forest_deactivation(event):
-    service = queryUtility(IShortURLService)
-    if service is not None:
-        service.deactivate()
+InitializeClass(ShortURLResolverService)
 
 
 class ShortURLServiceForm(silvaforms.ZMIComposedForm):
     grok.name('manage_settings')
-    grok.context(ICustomShortURLService)
+    grok.context(IShortURLService)
 
     label = _(u"Settings")
     description = _(u"Configure short URL traversing.")
@@ -318,19 +285,17 @@ class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
         title=u"Base URL for short URLs")
-    short_url_target_host = schema.TextLine(
-        title=u"Base URL for redirecting short URLs to")
-    custom_short_url_base = schema.TextLine(
-        title=u"Base URL for custom short URLs")
+    rewrite_url_base = schema.TextLine(
+        title=u"Base URL to redirect to")
 
 
 class ShortURLDomainSettings(silvaforms.ZMISubForm):
     grok.view(ShortURLServiceForm)
-    grok.context(ICustomShortURLService)
+    grok.context(IShortURLService)
     grok.order(10)
 
-    label = _(u"Base URLs")
-    description = _(u"Configure base URLS")
+    label = _(u"Base URL")
+    description = _(u"Configure base URL")
 
     ignoreContent = False
     ignoreRequest = True
@@ -338,48 +303,3 @@ class ShortURLDomainSettings(silvaforms.ZMISubForm):
     dataManager = silvaforms.SilvaDataManager
     fields = silvaforms.Fields(IShortURLSettingsFields)
     actions = silvaforms.Actions(EditAction('Save Changes'))
-
-    fields['short_url_base'].available = \
-        lambda f: IShortURLService.providedBy(f.context)
-    fields['short_url_target_host'].available = \
-        lambda f: IShortURLService.providedBy(f.context)
-
-
-class ShortURLActivationSettings(silvaforms.ZMISubForm):
-    """Activate the short url
-    """
-    grok.view(ShortURLServiceForm)
-    grok.context(IShortURLService)
-    grok.order(20)
-
-    label = _(u'Activation')
-    description = _(u"(De)Activate traversal on top level "
-        "domain for automatic short urls")
-
-    ignoreContent = False
-    ignoreRequest = True
-
-    @silvaforms.action(
-        _(u"Activate"),
-        available=lambda f: not f.context.is_active())
-    def activate(self):
-        try:
-            self.context.activate()
-            self.status = _(u'Activated.')
-        except ValueError as error:
-            self.status = error.args[0]
-            return silvaforms.FAILURE
-        return silvaforms.SUCCESS
-
-    @silvaforms.action(
-        _(u"Deactivate"),
-        available=lambda f: f.context.is_active())
-    def deactivate(self):
-        try:
-            self.context.deactivate()
-            self.status = _(u'Deactivated.')
-        except ValueError as error:
-            self.status = error.args[0]
-            return silvaforms.FAILURE
-        return silvaforms.SUCCESS
-

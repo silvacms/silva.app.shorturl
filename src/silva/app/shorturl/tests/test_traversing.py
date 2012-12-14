@@ -2,11 +2,9 @@ import unittest
 
 from zope import component
 
-from Products.Silva.testing import TestRequest
-
 from silva.app.forest.interfaces import IForestService
-from silva.app.forest.interfaces import IVirtualHosting
 from silva.app.forest.service import VirtualHost, Rewrite
+
 from silva.core.interfaces import IAccessSecurity
 from silva.core.interfaces import IPublicationWorkflow
 from silva.core.interfaces import ISiteManager
@@ -30,49 +28,35 @@ class TraversingTestCase(unittest.TestCase):
         self.content = self.root.folder.something
         self.layer.login('manager')
         IPublicationWorkflow(self.content).publish()
-        self.layer.logout()
         self.service = component.getUtility(IShortURLService)
-        self.forest_service = component.getUtility(IForestService)
-        self.forest_service.activate()
-        self.service.activate()
-        self.service.set_short_url_base('http://shorturl.local/')
+        self.service.register_custom_short_path('ShortCut', self.content)
+        self.layer.logout()
+
+    def test_traverse_to_content(self):
+        """ Normal traversing should continue to work.
+        """
+        with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
+            browser.options.follow_redirect = False
+            self.assertEqual(200,
+                browser.open('http://localhost/root/folder/something'))
 
     def test_traverse_with_short_url(self):
         short_path = self.service.get_short_path(self.content)
         with self.layer.get_browser() as browser:
             browser.options.handle_errors = False
-            browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
             browser.options.follow_redirect = False
-            self.assertEqual(301, browser.open("/" + short_path))
+            self.assertEqual(301, browser.open("/root/$" + short_path))
             self.assertEqual(browser.headers['location'],
                             'http://localhost/root/folder/something')
 
-    def test_traverse_on_root_path(self):
-        with self.layer.get_browser() as browser:
-            browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
-            self.assertEqual(404, browser.open('/'))
-
-    def test_traverse_with_short_url_with_forest(self):
-        self.service.set_short_url_target_host('http://infrae.com')
-        self.forest_service.set_hosts(
-            [VirtualHost(
-                'http://infrae.com/',
-                [],
-                [Rewrite('/', '/root/folder', None)])])
-        short_path = self.service.get_short_path(self.content)
+    def test_traverse_with_custom_short_path(self):
         with self.layer.get_browser() as browser:
             browser.options.handle_errors = False
-            browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
             browser.options.follow_redirect = False
-            self.assertEqual(301, browser.open("/" + short_path))
+            self.assertEqual(301, browser.open("/root/ShortCut"))
             self.assertEqual(browser.headers['location'],
-                            'http://infrae.com/something')
-
-    def test_traverse_on_vhost(self):
-        with self.layer.get_browser() as browser:
-            browser.options.handle_errors = False
-            browser.options.follow_redirect = False
-            self.assertEqual(200, browser.open("/root/folder/something"))
+                            'http://localhost/root/folder/something')
 
     def test_traverse_on_private_object(self):
         access = component.getAdapter(self.root.folder, IAccessSecurity)
@@ -81,17 +65,55 @@ class TraversingTestCase(unittest.TestCase):
         short_path = self.service.get_short_path(self.content)
         with self.layer.get_browser() as browser:
             browser.options.handle_errors = False
-            browser.set_request_header('X-VHM-URL', 'http://shorturl.local/')
             browser.options.follow_redirect = False
-            self.assertEqual(301, browser.open("/" + short_path))
+            self.assertEqual(301, browser.open("/root/$" + short_path))
             self.assertEqual(browser.headers['location'],
                             'http://localhost/root/folder/something')
             browser.clear_request_headers()
             self.assertEqual(401, browser.open(browser.headers['location']))
 
+    def test_traverse_with_short_url_with_forest(self):
+        forest_service = component.getUtility(IForestService)
+        forest_service.activate()
+        forest_service.set_hosts(
+            [VirtualHost(
+                'http://infrae.com/',
+                [],
+                [Rewrite('/', '/root', None)])])
+        short_path = self.service.get_short_path(self.content)
+        with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
+            browser.options.follow_redirect = False
+            browser.set_request_header('X-VHM-URL', 'http://infrae.com/')
+            self.assertEqual(301, browser.open("/$" + short_path))
+            self.assertEqual(browser.headers['location'],
+                            'http://infrae.com/folder/something')
+
+    def test_custom_path_with_forest(self):
+        forest_service = component.getUtility(IForestService)
+        forest_service.activate()
+        forest_service.set_hosts(
+            [VirtualHost(
+                'http://infr.ae/',
+                [],
+                [Rewrite('/', '/root', None)]),
+             VirtualHost(
+                'http://infrae.com/',
+                [],
+                [Rewrite('/', '/root', None)])]
+            )
+
+        self.service.set_rewrite_url_base('http://infrae.com/')
+        with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
+            browser.options.follow_redirect = False
+            browser.set_request_header('X-VHM-URL', 'http://infr.ae/')
+            self.assertEqual(301, browser.open("/ShortCut"))
+            self.assertEqual(browser.headers['location'],
+                            'http://infrae.com/folder/something')
 
 
-class LocalSiteCustomURLTraversingTestCase(unittest.TestCase):
+class LocalSiteURLTraversingTestCase(unittest.TestCase):
 
     layer = FunctionalLayer
 
@@ -106,10 +128,9 @@ class LocalSiteCustomURLTraversingTestCase(unittest.TestCase):
         IPublicationWorkflow(self.content).publish()
         ISiteManager(self.root.pub).make_site()
         factory = self.root.pub.manage_addProduct['silva.app.shorturl']
-        factory.manage_addShortURLLocalService()
+        factory.manage_addShortURLService()
         self.local_service = self.root.pub.service_shorturls
         self.local_service.register_custom_short_path('ShortCut', self.content)
-        self.forest_service = component.getUtility(IForestService)
         self.layer.logout()
 
     def test_traverse_on_local_site_with_custom_short_path(self):
@@ -133,51 +154,32 @@ class LocalSiteCustomURLTraversingTestCase(unittest.TestCase):
             self.assertEqual(200,
                 browser.open('http://localhost/root/pub/something'))
 
-    def test_forest_vhm(self):
-        """ Test traversal with short url on localsite with forest vhm.
-        """
-        self.forest_service.activate()
-        self.forest_service.set_hosts(
+    def test_custom_path_with_forest(self):
+        forest_service = component.getUtility(IForestService)
+        forest_service.activate()
+        forest_service.set_hosts(
             [VirtualHost(
+                'http://infr.ae/',
+                [],
+                [Rewrite('/', '/root/pub', None)]),
+             VirtualHost(
                 'http://infrae.com/',
                 [],
-                [Rewrite('/', '/root/pub', None)])])
-        self.local_service.set_custom_short_url_base('http://infrae.com')
+                [Rewrite('/', '/root/pub', None)])]
+            )
 
+        self.local_service.set_rewrite_url_base('http://infrae.com/')
         with self.layer.get_browser() as browser:
-            browser.set_request_header('X-VHM-URL', 'http://infrae.com/')
-            browser.options.follow_redirect = False
             browser.options.handle_errors = False
+            browser.options.follow_redirect = False
+            browser.set_request_header('X-VHM-URL', 'http://infr.ae/')
             self.assertEqual(301, browser.open("/ShortCut"))
             self.assertEqual(browser.headers['location'],
                             'http://infrae.com/something')
-
-    def test_custom_url(self):
-        self.forest_service.activate()
-        request = TestRequest(
-            application=self.root,
-            url='http://localhost/man/edit',
-            headers=[('X-VHM-Url', 'http://localhost')])
-        plugin = request.query_plugin(request.application, IVirtualHosting)
-        root, method, path = plugin(request.method, request.path)
-
-        get_url = lambda: self.local_service.get_custom_short_url(
-            self.content, request)
-
-        self.assertEqual('http://localhost/root/pub/ShortCut', get_url())
-        self.local_service.set_custom_short_url_base('http://infrae.com/')
-        self.assertEqual('http://infrae.com/root/pub/ShortCut', get_url())
-
-        self.forest_service.set_hosts(
-            [VirtualHost(
-                'http://infrae.com/',
-                [],
-                [Rewrite('/', '/root/pub', None)])])
-        self.assertEqual('http://infrae.com/ShortCut', get_url())
 
 
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TraversingTestCase))
-    suite.addTest(unittest.makeSuite(LocalSiteCustomURLTraversingTestCase))
+    suite.addTest(unittest.makeSuite(LocalSiteURLTraversingTestCase))
     return suite

@@ -23,7 +23,7 @@ from zeam.form import silva as silvaforms
 from zeam.form.base.widgets import FieldWidget
 from zeam.form.ztk.widgets.textline import TextLineField
 
-from .interfaces import IShortURLService, ICustomShortURLService
+from .interfaces import IShortURLService
 from .service import closest_custom_short_url_service, closest_site
 
 
@@ -49,8 +49,9 @@ class ShortURLInformation(silvaviews.Viewlet):
         self.short_url = None
         self.custom_short_url = None
 
-        if self.service is not None and self.service.is_active():
-            self.short_url = self.service.get_short_url(self.context)
+        if self.service is not None:
+            self.short_url = self.service.get_short_url(
+                self.context, self.request)
 
         if self.custom_short_url_service is not None:
             self.custom_short_url = \
@@ -77,7 +78,7 @@ def validate_custom_path(value, form):
 
 
 class RESTCustomShortPathInfo(UIREST):
-    grok.context(ICustomShortURLService)
+    grok.context(IShortURLService)
     grok.require('silva.ReadSilvaContent')
     grok.name('silva.app.shorturl.custom_path_lookup')
 

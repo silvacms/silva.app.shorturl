@@ -6,6 +6,9 @@ from zope.interface import Interface
 from silva.core import conf as silvaconf
 from silva.core.conf.installer import DefaultInstaller
 
+SERVICE_NAME = 'service_shorturls'
+SHORT_URL_PREFIX = '$'
+
 silvaconf.extension_name("silva.app.shorturl")
 silvaconf.extension_title("Silva Short URL")
 silvaconf.extension_depends(['Silva'])
@@ -15,12 +18,15 @@ class SilvaShortURLInstaller(DefaultInstaller):
     """ Silva shorturl installer
     """
 
-    service_name = 'service_shorturls'
+    service_name = SERVICE_NAME
 
     def install_custom(self, root):
-        if self.service_name not in root.objectIds():
+        if SERVICE_NAME not in root.objectIds():
             factory = root.manage_addProduct['silva.app.shorturl']
-            factory.manage_addShortURLService(self.service_name)
+            factory.manage_addShortURLService(SERVICE_NAME)
+        resolver_name = SERVICE_NAME + '_resolver'
+        if resolver_name not in root.objectIds():
+            factory.manage_addShortURLResolverService(resolver_name)
 
 
 class IExtension(Interface):
@@ -29,3 +35,4 @@ class IExtension(Interface):
 
 
 install = SilvaShortURLInstaller("silva.app.shorturl", IExtension)
+
