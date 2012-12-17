@@ -35,7 +35,7 @@ from .codec import ShortURLCodec
 from . import SERVICE_NAME, SHORT_URL_PREFIX
 
 
-def closest_custom_short_url_service(location):
+def closest_short_url_service(location):
     while location:
         if ISite.providedBy(location):
             service = location._getOb(SERVICE_NAME, None)
@@ -167,6 +167,12 @@ class ShortURLService(SilvaService):
     def get_short_url_base(self):
         return self._short_url_base
 
+    def get_prefix_url(self, request):
+        site = self.get_container()
+        url_adapter = getMultiAdapter((site, request), IContentURL)
+        url = url_adapter.url(host=self.get_short_url_base())
+        return url.rstrip('/') + '/'
+
     security.declareProtected(
         'View Management Screens', 'set_short_url_base')
     def set_short_url_base(self, url):
@@ -284,9 +290,11 @@ class ShortURLServiceForm(silvaforms.ZMIComposedForm):
 class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
-        title=u"Base URL for short URLs")
+        title=u"Base URL for short URLs",
+        required=False)
     rewrite_url_base = schema.TextLine(
-        title=u"Base URL to redirect to")
+        title=u"Base URL to redirect to",
+        required=False)
 
 
 class ShortURLDomainSettings(silvaforms.ZMISubForm):

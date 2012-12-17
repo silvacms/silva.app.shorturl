@@ -1,11 +1,9 @@
-<div class="custom-path-widget">
-    ${widget.base_url}
-    <input type="text" value="#" id="#" name="#" class="#"
+<div class="display-shorturl-widget">
+    <input type="text" readonly="readonly" value="#" id="#" name="#" class="#"
            tal:attributes="name widget.identifier;
                            value widget.inputValue();
                            id widget.htmlId();
                            class widget.htmlClass();
                            widget.htmlAttributes()" />
-    <div class="custom-path-info" style="display: none">
-    </div>
+    <a href="${widget.inputValue()}" target="_blank">Try the short url</a>
 </div>

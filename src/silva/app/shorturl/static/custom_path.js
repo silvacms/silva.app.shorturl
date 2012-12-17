@@ -56,7 +56,9 @@
   $(document).ready(function(){
 
     $('.form-fields-container').live('loadwidget-smiform', function(event) {
-      CustomPath($(this));
+      $.each($(this).find('div.custom-path-widget'), function(){
+        CustomPath($(this));
+      });
     });
 
   });
