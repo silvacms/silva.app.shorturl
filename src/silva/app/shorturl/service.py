@@ -79,7 +79,7 @@ class ShortURLService(SilvaService):
     _rewrite_url_base = None
 
     manage_options = (
-        {'label':'Settings', 'action':'manage_settings'},
+        {'label':'Short URL configuration', 'action':'manage_settings'},
     ) + SilvaService.manage_options
 
     def __init__(self, id):
@@ -284,7 +284,7 @@ class ShortURLServiceForm(silvaforms.ZMIComposedForm):
     grok.context(IShortURLService)
 
     label = _(u"Settings")
-    description = _(u"Configure short URL traversing.")
+    description = _(u"Configure Short URL traversing and/or redirection.")
 
 
 class IShortURLSettingsFields(Interface):

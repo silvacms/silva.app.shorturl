@@ -273,7 +273,7 @@ class CustomShortURLForm(ShortURLFormBase):
     fields['custom_path'].mode = 'custom_path'
     fields['custom_path'].validate = validate_custom_path
 
-    actions = silvaforms.Actions(SaveCustomPathAction(_(u"Save custom Short URL")))
+    actions = silvaforms.Actions(SaveCustomPathAction(_(u"Create custom Short URL")))
 
     def available(self):
         return self.short_url_service.get_custom_short_path(
