@@ -9,7 +9,7 @@ from ..testing import FunctionalLayer
 from ..interfaces import IShortURLService, IShortURLResolverService
 
 
-class CustomShortURLServiceTestCase(unittest.TestCase):
+class ShortURLServiceTestCase(unittest.TestCase):
 
     layer = FunctionalLayer
 
@@ -22,6 +22,7 @@ class CustomShortURLServiceTestCase(unittest.TestCase):
         factory.manage_addMockupVersionedContent('other', 'Other Content')
 
         self.content = self.root.pub.something
+        self.short_url = component.queryUtility(IShortURLService)
 
     def test_verify_service(self):
         short_url = component.queryUtility(IShortURLService)
@@ -51,9 +52,29 @@ class CustomShortURLServiceTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             factory.manage_addMockupVersionedContent('ST', 'Some Content')
 
+    def test_regiter_short_paths(self):
+        paths = ('foo', 'bar', 'baz')
+        for path in paths:
+            self.short_url.register_custom_short_path(path, self.content)
+            self.assertEqual(self.content,
+                self.short_url.get_content_from_custom_short_path(path))
+
+        self.assertEqual(set(paths), set(
+            self.short_url.get_custom_short_paths(self.content)))
+
+    def test_unregister_does_not_exist(self):
+        self.assertFalse(
+            self.short_url.unregister_custom_short_path('bar', self.content))
+        self.short_url.register_custom_short_path('bar', self.content)
+        self.assertTrue(
+            self.short_url.unregister_custom_short_path('bar', self.content))
+        self.assertEqual(None,
+            self.short_url.get_content_from_custom_short_path('bar'))
+        self.assertEqual(set(),
+            self.short_url.get_custom_short_paths(self.content))
 
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(CustomShortURLServiceTestCase))
+    suite.addTest(unittest.makeSuite(ShortURLServiceTestCase))
     return suite

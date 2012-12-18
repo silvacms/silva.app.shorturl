@@ -33,20 +33,16 @@ class IShortURLService(ISilvaService):
         """ Register a custom short path for content.
         """
 
-    def get_custom_short_path(content):
-        """ Retrieve custom short path from content.
+    def get_custom_short_paths(content):
+        """ Retrieve custom short paths for the content.
         """
 
     def get_content_from_custom_short_path(short_path):
         """ Retrieve content from custom short path.
         """
 
-    def get_short_url(content, request):
-        """ Retrieve short url for content.
-        """
-
-    def get_custom_short_url(content, request):
-        """ Retrieve the custom short url for the content.
+    def get_prefix_url(request):
+        """ Retrieve the base of short urls after computation (forest, local site).
         """
 
     def get_short_url_base():

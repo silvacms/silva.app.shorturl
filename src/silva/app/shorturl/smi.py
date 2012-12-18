@@ -22,7 +22,12 @@ from silva.ui.menu import MenuItem
 from silva.ui.rest import UIREST
 
 from zeam.form import silva as silvaforms
+from zeam.form.base.interfaces import IWidget
 from zeam.form.base.widgets import FieldWidget
+#from zeam.form.ztk.interfaces import ICollectionField
+from zeam.form.ztk.widgets.collection import newCollectionWidgetFactory
+from zeam.form.ztk.widgets.collection import MultiGenericDisplayFieldWidget
+from zeam.form.ztk.widgets.collection import SetField
 from zeam.form.ztk.widgets.textline import TextLineField
 
 from .interfaces import IShortURLService
@@ -80,22 +85,34 @@ class ShortURLInformation(silvaviews.Viewlet):
                 self.context, self.request)
 
         if self.short_url_service is not None:
-            self.custom_short_url = \
-                self.short_url_service.get_custom_short_url(
-                    self.context,
-                    self.request)
+            pass
+            # XXX: FIXME
+            # self.custom_short_url = \
+            #     self.short_url_service.get_custom_short_url(
+            #         self.context,
+            #         self.request)
 
 
 class ShortURLFields(Interface):
-    short_url = schema.TextLine(title=_(u"Short URL"),
-                                required=False)
-    custom_path = schema.TextLine(title=_(u"Custom Short URL"),
-                                  required=False)
+    short_url = schema.TextLine(
+        title=_(u"Short URL"),
+        description=_(u"<HINT SHORT URL>"),
+        required=False)
+    custom_paths = schema.Set(
+        title=_(u'Custom short URLs'),
+        description = _(u"<HINT CUSTOM SHORT URLs>"),
+        required=False,
+        value_type=schema.TextLine(title=_(u"Custom short URL"),
+                                   required=False))
+
 
 
 class CustomShortURLFields(Interface):
-    custom_path = schema.TextLine(title=_(u"Custom Short URL"),
-                                  required=True)
+    custom_path = schema.TextLine(
+        title=_(u"Custom short URL"),
+        description=_(u'<HINT CUSTOM SHORT URL (ADD)>'),
+        required=True)
+
 
 
 def validate_custom_path(value, form):
@@ -173,6 +190,18 @@ class DisplayShortURLWidget(ShortURLWidget):
             return self.base_url.rstrip('/') + '/' + value
         return value
 
+grok.global_adapter(
+    newCollectionWidgetFactory(mode='display_shorturl'),
+    adapts=(SetField, Interface, Interface),
+    provides=IWidget,
+    name='display_shorturl')
+
+
+class SetFieldWidget(MultiGenericDisplayFieldWidget):
+    grok.adapts(SetField, Interface, Interface, Interface)
+    grok.name('display_shorturl')
+
+
 class CustomPathWidget(ShortURLWidget):
     MODE = 'custom_path'
     grok.adapts(TextLineField, Interface, Interface)
@@ -211,35 +240,29 @@ class ShortURLFormBase(silvaforms.SMISubForm):
     def short_url_service(self):
         return closest_short_url_service(self.context)
 
-    def available(self):
-        return self.short_url_service is not None \
-            and not ISite.providedBy(self.context)
 
-
-def custom_short_path_default(form):
-    return form.short_url_service.get_custom_short_path(form.context) or \
-        silvaforms.NO_VALUE
+def custom_short_paths_default(form):
+    return form.short_url_service.get_custom_short_paths(form.context)
 
 def short_url_default(form):
     return SHORT_URL_PREFIX + form.short_url_service.get_short_path(
         form.context)
 
-def custom_path_available(form):
-    return form.short_url_service.get_custom_short_path(form.context) \
-        is not None
+def custom_paths_available(form):
+    return bool(form.short_url_service.get_custom_short_paths(form.context))
 
 
 class ShortURLForm(ShortURLFormBase):
 
     label = _(u'Short URLs')
-    mode = 'display'
+    description = _(u'<DESCRIPTION SHORT URL DISPLAY FORM>')
+
     grok.order(100)
     fields = silvaforms.Fields(ShortURLFields)
-    fields['custom_path'].mode = 'display_shorturl'
-    fields['short_url'].mode = 'display_shorturl'
+    mode = 'display_shorturl'
 
-    fields['custom_path'].available = custom_path_available
-    fields['custom_path'].defaultValue = custom_short_path_default
+    fields['custom_paths'].available = custom_paths_available
+    fields['custom_paths'].defaultValue = custom_short_paths_default
     fields['short_url'].defaultValue = short_url_default
 
     # @silvaforms.action(title=_(u"Clear custom path"), **{
@@ -264,7 +287,8 @@ class SaveCustomPathAction(silvaforms.Action):
 
 class CustomShortURLForm(ShortURLFormBase):
 
-    label = _(u'Custom Short URL')
+    label = _(u'Add Custom Short URL')
+    description = _(u'<DESCRIPTION ADD CUSTOM SHORT URL FORM>')
 
     grok.view(ShortURLTool)
     grok.context(ISilvaObject)
@@ -274,7 +298,3 @@ class CustomShortURLForm(ShortURLFormBase):
     fields['custom_path'].validate = validate_custom_path
 
     actions = silvaforms.Actions(SaveCustomPathAction(_(u"Create custom Short URL")))
-
-    def available(self):
-        return self.short_url_service.get_custom_short_path(
-            self.context) is None

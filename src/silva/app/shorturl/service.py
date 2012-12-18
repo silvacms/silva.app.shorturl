@@ -20,6 +20,7 @@ from App.class_init import InitializeClass
 
 from silva.core import conf as silvaconf
 from silva.core.interfaces import ISilvaNameChooser, ContentError
+from silva.core.interfaces import IInvisibleService
 from silva.core.interfaces.service import ISilvaLocalService
 from silva.core.services.base import SilvaService
 from silva.core.views.interfaces import IContentURL
@@ -112,31 +113,30 @@ class ShortURLService(SilvaService):
         'View Management Screens', 'register_custom_short_path')
     def register_custom_short_path(self, short_path, content):
         id = self.intids.register(content)
-        try:
-            old = self._custom_url_reverse_index[id]
-            del self._custom_url_index[old]
-            del self._custom_url_reverse_index[id]
-        except KeyError:
-            pass
+        short_path_set = self._custom_url_reverse_index.get(id, None)
+        if short_path_set is None:
+            self._custom_url_reverse_index[id] = \
+                short_path_set = self.family.OO.Set()
+        short_path_set.add(short_path)
         self._custom_url_index[short_path] = id
-        self._custom_url_reverse_index[id] = short_path
 
-    def unregister_custom_short_path(self, content):
+    def unregister_custom_short_path(self, short_path, content):
         id = self.intids.register(content)
-        try:
-            old = self._custom_url_reverse_index[id]
-            del self._custom_url_index[old]
-            del self._custom_url_reverse_index[id]
-        except KeyError:
+        short_path_set = self._custom_url_reverse_index.get(id, None)
+        if short_path_set is None:
             return False
+        short_path_set.remove(short_path)
+        if not short_path_set:
+            del self._custom_url_reverse_index[id]
+        del self._custom_url_index[short_path]
         return True
 
-    def get_custom_short_path(self, content):
+    def get_custom_short_paths(self, content):
         id = self.intids.register(content)
         try:
-            return self._custom_url_reverse_index[id]
+            return set(self._custom_url_reverse_index[id])
         except KeyError:
-            return None
+            return set()
 
     def get_content_from_custom_short_path(self, short_path):
         try:
@@ -153,16 +153,6 @@ class ShortURLService(SilvaService):
         url_adapter = getMultiAdapter((site, request), IContentURL)
         url = url_adapter.url(host=self.get_short_url_base())
         return url.rstrip('/') + '/' + SHORT_URL_PREFIX + short_path
-
-    def get_custom_short_url(self, content, request):
-        short_path = self.get_custom_short_path(content)
-        if short_path is None:
-            return None
-
-        site = aq_parent(self)
-        url_adapter = getMultiAdapter((site, request), IContentURL)
-        url = url_adapter.url(host=self.get_short_url_base())
-        return url.rstrip('/') + '/' + short_path
 
     def get_short_url_base(self):
         return self._short_url_base
@@ -219,7 +209,7 @@ class CustomURLNameChooser(grok.Subscription):
 class ShortURLResolverService(SilvaService):
     """ Service for resolving short urls.
     """
-    grok.implements(IShortURLResolverService)
+    grok.implements(IShortURLResolverService, IInvisibleService)
     grok.name('service_shorturls_resolver')
 
     meta_type = 'Silva Short URL Resolver'
