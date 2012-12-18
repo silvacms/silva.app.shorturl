@@ -281,9 +281,11 @@ class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
         title=u"Base URL for short URLs",
+        description=u"<DESCRIPTION SHORT URL BASE FIELD>",
         required=False)
     rewrite_url_base = schema.TextLine(
         title=u"Base URL to redirect to",
+        description=u"<DESCRIPTION REDIRECT TO FIELD>",
         required=False)
 
 
