@@ -37,7 +37,7 @@ class ShortURLTool(silvaforms.SMIComposedForm):
     grok.name('shorturl')
     grok.require('silva.ManageSilvaContent')
 
-    label = _(u"Manage short URLs")
+    label = _(u"Manage Short URLs")
     description = _(u"This screen lets you manage short URLs.")
 
     def available(self):
@@ -89,12 +89,12 @@ class ShortURLInformation(silvaviews.Viewlet):
 class ShortURLFields(Interface):
     short_url = schema.TextLine(title=_(u"Short URL"),
                                 required=False)
-    custom_path = schema.TextLine(title=_(u"Custom short URL"),
+    custom_path = schema.TextLine(title=_(u"Custom Short URL"),
                                   required=False)
 
 
 class CustomShortURLFields(Interface):
-    custom_path = schema.TextLine(title=_(u"Custom short URL"),
+    custom_path = schema.TextLine(title=_(u"Custom Short URL"),
                                   required=True)
 
 
@@ -273,7 +273,7 @@ class CustomShortURLForm(ShortURLFormBase):
     fields['custom_path'].mode = 'custom_path'
     fields['custom_path'].validate = validate_custom_path
 
-    actions = silvaforms.Actions(SaveCustomPathAction(_(u"Save custom path")))
+    actions = silvaforms.Actions(SaveCustomPathAction(_(u"Save custom Short URL")))
 
     def available(self):
         return self.short_url_service.get_custom_short_path(

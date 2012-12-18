@@ -5,5 +5,5 @@
                            id widget.htmlId();
                            class widget.htmlClass();
                            widget.htmlAttributes()" />
-    <a href="${widget.inputValue()}" target="_blank">Try the short url</a>
+    <a href="${widget.inputValue()}" target="_blank"> Try the Short URL.</a>
 </div>

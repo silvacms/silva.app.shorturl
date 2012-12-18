@@ -303,7 +303,7 @@ class ShortURLDomainSettings(silvaforms.ZMISubForm):
     grok.order(10)
 
     label = _(u"Base URL")
-    description = _(u"Configure base URL")
+    description = _(u"Configure base URLs.")
 
     ignoreContent = False
     ignoreRequest = True
