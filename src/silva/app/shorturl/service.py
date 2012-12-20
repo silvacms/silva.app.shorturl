@@ -273,7 +273,7 @@ class ShortURLServiceForm(silvaforms.ZMIComposedForm):
     grok.name('manage_settings')
     grok.context(IShortURLService)
 
-    label = _(u"Settings")
+    label = _(u"Short URL Tool Service")
     description = _(u"Configure Short URL traversing and/or redirection.")
 
 
@@ -295,7 +295,7 @@ class ShortURLDomainSettings(silvaforms.ZMISubForm):
     grok.order(10)
 
     label = _(u"Base URL")
-    description = _(u"Configure the base and landing URLs for the Short URL Tool.")
+    description = _(u"Change the base and landing URLs for the Short URL Tool.")
 
     ignoreContent = False
     ignoreRequest = True

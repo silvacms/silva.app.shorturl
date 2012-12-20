@@ -40,10 +40,10 @@ class ShortURLTool(silvaforms.SMIComposedForm):
     """
     grok.adapts(Settings, ISilvaObject)
     grok.name('shorturl')
-    grok.require('silva.ManageSilvaContent')
+    grok.require('silva.ChangeSilvaContent')
 
-    label = _(u"Manage Short URLs")
-    description = _(u"This screen lets you manage Short URLs.")
+    label = _(u"Short URL Tool")
+    description = _(u"This screen lets you manage Short and custom URLs.")
 
     def available(self):
         return bool(component.queryUtility(IShortURLService)) and not \
@@ -99,8 +99,8 @@ class ShortURLFields(Interface):
         description=_(u"Highlight and copy the Short URL for use in other communications."),
         required=False)
     custom_paths = schema.Set(
-        title=_(u'Custom short URL'),
-        description = _(u"Highlight and copy the URL"),
+        title=_(u'Custom Short URL'),
+        description = _(u"Highlight and copy the URL."),
         required=False,
         value_type=schema.TextLine(title=_(u"Custom Short URL"),
                                    required=False))
