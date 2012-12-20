@@ -281,11 +281,11 @@ class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
         title=u"Base URL for short URLs",
-        description=u"<DESCRIPTION SHORT URL BASE FIELD>",
+        description=u"Reference a short domain name that you've created for Short URLs.",
         required=False)
     rewrite_url_base = schema.TextLine(
-        title=u"Base URL to redirect to",
-        description=u"<DESCRIPTION REDIRECT TO FIELD>",
+        title=u"Landing URL to redirect to",
+        description=u"Set your base URL to rewrite to a normal, probably longer, landing URL.",
         required=False)
 
 
@@ -295,7 +295,7 @@ class ShortURLDomainSettings(silvaforms.ZMISubForm):
     grok.order(10)
 
     label = _(u"Base URL")
-    description = _(u"Configure base URLs.")
+    description = _(u"Configure the base and landing URLs for the Short URL Tool.")
 
     ignoreContent = False
     ignoreRequest = True

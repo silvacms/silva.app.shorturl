@@ -36,14 +36,14 @@ from . import SHORT_URL_PREFIX
 
 
 class ShortURLTool(silvaforms.SMIComposedForm):
-    """ Short URL tool.
+    """ Short URL Tool.
     """
     grok.adapts(Settings, ISilvaObject)
     grok.name('shorturl')
     grok.require('silva.ManageSilvaContent')
 
     label = _(u"Manage Short URLs")
-    description = _(u"This screen lets you manage short URLs.")
+    description = _(u"This screen lets you manage Short URLs.")
 
     def available(self):
         return bool(component.queryUtility(IShortURLService)) and not \
@@ -53,7 +53,7 @@ class ShortURLTool(silvaforms.SMIComposedForm):
 class ShortURLMenu(MenuItem):
     grok.adapts(SettingsMenu, ISilvaObject)
     grok.order(10000)
-    grok.require('silva.ChangeSilvaAccess')
+    grok.require('silva.ChangeSilvaContent')
     name = _(u'Short URL Tool')
     screen = ShortURLTool
 
@@ -96,28 +96,28 @@ class ShortURLInformation(silvaviews.Viewlet):
 class ShortURLFields(Interface):
     short_url = schema.TextLine(
         title=_(u"Short URL"),
-        description=_(u"<HINT SHORT URL>"),
+        description=_(u"Highlight and copy the Short URL for use in other communications."),
         required=False)
     custom_paths = schema.Set(
-        title=_(u'Custom short URLs'),
-        description = _(u"<HINT CUSTOM SHORT URLs>"),
+        title=_(u'Custom short URL'),
+        description = _(u"Highlight and copy the URL"),
         required=False,
-        value_type=schema.TextLine(title=_(u"Custom short URL"),
+        value_type=schema.TextLine(title=_(u"Custom Short URL"),
                                    required=False))
 
 
 
 class CustomShortURLFields(Interface):
     custom_path = schema.TextLine(
-        title=_(u"Custom short URL"),
-        description=_(u'<HINT CUSTOM SHORT URL (ADD)>'),
+        title=_(u"Custom Short URL"),
+        description=_(u"Create a memorable custom Short URL for use in other media."),
         required=True)
 
 
 
 def validate_custom_path(value, form):
     if value is silvaforms.NO_VALUE:
-        return _(u'Missing required value.')
+        return _(u'A required value is missing.')
     try:
         service = closest_short_url_service(form.context)
         site = closest_site(service)
@@ -287,7 +287,7 @@ class SaveCustomPathAction(silvaforms.Action):
 
 class CustomShortURLForm(ShortURLFormBase):
 
-    label = _(u'Add Custom Short URL')
+    label = _(u'Add Custom Short URLs')
     description = _(u'<DESCRIPTION ADD CUSTOM SHORT URL FORM>')
 
     grok.view(ShortURLTool)
