@@ -1,4 +1,4 @@
-/* CSS for Short URL Tool  */
+/* CSS for Short URL Tool */
 div.test-url-button {
   display: inline-block;
   float: none;
@@ -7,15 +7,15 @@ div.test-url-button {
 div.test-url-button a {
   display: block;
   padding: 0 4px;
-  color: #4c4cae;
+  color: #00008b;
   white-space: nowrap;
 }
 div.test-url-button a:hover {
-  background-color: #EAEAEA;
-  background-image:linear-gradient(top,#EAEAEA,#FFF);
-  background-image:-moz-linear-gradient(top,#EAEAEA,#FFF);
+  background-color: #eaeaea;
+  background-image: linear-gradient(top,#EAEAEA,#FFF);
+  background-image: -moz-linear-gradient(top,#EAEAEA,#FFF);
   background-image: -webkit-gradient(top,#EAEAEA,#FFF);
   background-image: -webkit-linear-gradient(top,#EAEAEA,#FFF);
-  background-image:-o-linear-gradient(top,#EAEAEA,#FFFF);
-  background-image:-ms-linear-gradient(top,#EAEAEA,#FFF);
+  background-image: -o-linear-gradient(top,#EAEAEA,#FFFF);
+  background-image: -ms-linear-gradient(top,#EAEAEA,#FFF);
 }
