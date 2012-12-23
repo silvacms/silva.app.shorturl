@@ -1,14 +1,19 @@
 <div class="display-shorturl-widget">
-  <input type="text" readonly="readonly" size="40" value="#" id="#" name="#" class="#"
+  <input type="text" readonly="readonly" size="40" name="#" value="#" id="#" class="#"
     tal:attributes="
       name widget.identifier;
       value widget.inputValue();
       id widget.htmlId();
       class widget.htmlClass();
-      widget.htmlAttributes()" />
-
+      widget.htmlAttributes()"
+    />
   <div class="try-short-url-button actions">
     <a href="${widget.inputValue()}"
-      target="_blank">Test URL</a>
+      title="Opens page in a new tab or window"
+      target="_blank"
+      i18n:attributes="title"
+      i18n:translate="">
+        Test URL
+     </a>
   </div>
 </div>
