@@ -1,11 +1,13 @@
 div.try-short-url-button {
   display: inline-block;
-  float: right;
-  height: 17px;
+  float: none;
   margin-top: 0;
 }
 div.try-short-url-button a {
   display: block;
   padding: 0 4px;
   white-space: nowrap;
+}
+input.field {
+  height: 20px
 }
