@@ -12,6 +12,8 @@ div.try-short-url-button a:hover {
   background-color: #EAEAEA;
   background-image:linear-gradient(top,#EAEAEA,#FFF);
   background-image:-moz-linear-gradient(top,#EAEAEA,#FFF);
+  background-image: -webkit-gradient(top,#EAEAEA,#FFF);
+  background-image: -webkit-linear-gradient(top,#EAEAEA,#FFF);
   background-image:-o-linear-gradient(top,#EAEAEA,#FFFF);
   background-image:-ms-linear-gradient(top,#EAEAEA,#FFF);
 }
