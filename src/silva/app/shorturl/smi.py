@@ -95,7 +95,7 @@ class ShortURLInformation(silvaviews.Viewlet):
 
 class ShortURLFields(Interface):
     short_url = schema.TextLine(
-        title=_(u"Short URL"),
+        title=_(u"Short URL for this item"),
         description=_(u"Highlight and copy the Short URL for use in other communications."),
         required=False)
     custom_paths = schema.Set(
