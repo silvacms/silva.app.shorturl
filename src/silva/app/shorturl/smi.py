@@ -42,8 +42,8 @@ class ShortURLTool(silvaforms.SMIComposedForm):
     grok.name('shorturl')
     grok.require('silva.ChangeSilvaContent')
 
-    label = _(u"Short URL Tool")
-    description = _(u"This screen lets you manage and customize Short URLs. The URLs link directly to the public view of this item.")
+    label = _(u"Short <acronym title="Uniform Resource Locator">URL</acronym> Tool")
+    description = _(u'This screen lets you manage and customize Short URLs. The URLs link directly to the public view of this item.')
 
     def available(self):
         return bool(component.queryUtility(IShortURLService)) and not \
