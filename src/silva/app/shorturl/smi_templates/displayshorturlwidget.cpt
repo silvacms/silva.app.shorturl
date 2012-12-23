@@ -1,12 +1,14 @@
 <div class="display-shorturl-widget">
-    <input type="text" readonly="readonly" size="40" value="#" id="#" name="#" class="#"
-           tal:attributes="name widget.identifier;
-                           value widget.inputValue();
-                           id widget.htmlId();
-                           class widget.htmlClass();
-                           widget.htmlAttributes()" />
+  <input type="text" readonly="readonly" size="40" value="#" id="#" name="#" class="#"
+    tal:attributes="
+      name widget.identifier;
+      value widget.inputValue();
+      id widget.htmlId();
+      class widget.htmlClass();
+      widget.htmlAttributes()" />
 
-    <a href="${widget.inputValue()}"
-       class="try-short-url-button"
-       target="_blank"><span>Try the Short URL<span></a>
+  <a href="${widget.inputValue()}"
+    class="try-short-url-button"
+    target="_blank"><span>Try the Short URL<span>
+  </a>
 </div>
