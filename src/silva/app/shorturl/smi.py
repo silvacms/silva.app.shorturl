@@ -213,7 +213,7 @@ class CustomPathWidget(ShortURLWidget):
         int_id = component.getUtility(IIntIds).register(self.form.context)
         self._htmlAttributes['data-lookup-url'] = self.lookup_url
         self._htmlAttributes['data-target-id'] = str(int_id)
-        self._htmlAttributes['size'] = '22'
+        self._htmlAttributes['size'] = '24'
         self._htmlAttributes['placeholder'] = _(u'Shortcut...')
 
     @Lazy

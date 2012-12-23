@@ -8,6 +8,10 @@ div.try-short-url-button a {
   padding: 0 4px;
   white-space: nowrap;
 }
-input.field {
-  height: 20px
+div.try-short-url-button a:hover {
+  background-color: #EAEAEA;
+  background-image:linear-gradient(top,#EAEAEA,#FFF);color:#111}
+  background-image:-moz-linear-gradient(top,#EAEAEA,#FFF);
+  background-image:-o-linear-gradient(top,#EAEAEA,#FFFF);
+  background-image:-ms-linear-gradient(top,#EAEAEA,#FFF);
 }
