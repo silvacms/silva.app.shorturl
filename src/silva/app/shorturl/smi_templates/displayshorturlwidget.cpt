@@ -7,7 +7,7 @@
       class widget.htmlClass();
       widget.htmlAttributes()"
     />
-  <div class="try-short-url-button actions">
+  <div class="actions test-url-button">
     <a href="${widget.inputValue()}"
       title="Opens page in a new tab or window"
       target="_blank"
