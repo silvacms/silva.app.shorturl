@@ -7,8 +7,9 @@
       class widget.htmlClass();
       widget.htmlAttributes()" />
 
-  <a href="${widget.inputValue()}"
-    class="try-short-url-button"
-    target="_blank"><span>Try the Short URL<span>
-  </a>
+  <div class="try-short-url-button actions"
+    <a href="${widget.inputValue()}"
+      target="_blank"><span>Try the Short URL<span>
+    </a>
+  </div>
 </div>
