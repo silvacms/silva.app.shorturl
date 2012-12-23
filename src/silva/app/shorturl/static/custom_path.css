@@ -1,0 +1,9 @@
+a.try-short-url-button {
+  color:darkblue;
+  display: block;
+  line-height: 20px;
+  white-space: nowrap;
+}
+a.try-short-url-button span {
+  padding: 0px 4px;
+}
