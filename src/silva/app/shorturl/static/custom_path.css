@@ -1,8 +1,10 @@
 div.try-short-url-button {
-  display:inline-block
+  display:inline-block;
+  float:right;
+  height:17px;
+  margin-top:0;
 }
 div.try-short-url-button a {
-  color:darkblue;
   display: block;
   line-height: 20px;
   white-space: nowrap;

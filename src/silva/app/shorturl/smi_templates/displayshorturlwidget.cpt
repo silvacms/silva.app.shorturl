@@ -9,7 +9,6 @@
 
   <div class="try-short-url-button actions">
     <a href="${widget.inputValue()}"
-      target="_blank"><span>Test URL<span>
-    </a>
+      target="_blank"><span>Test URL<span></a>
   </div>
 </div>
