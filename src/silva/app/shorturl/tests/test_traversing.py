@@ -50,6 +50,24 @@ class TraversingTestCase(unittest.TestCase):
             self.assertEqual(browser.headers['location'],
                             'http://localhost/root/folder/something')
 
+    def test_traverse_on_default(self):
+        """ Traversing on default redirects to container
+        """
+        self.layer.login('manager')
+        factory = self.root.folder.manage_addProduct['Silva']
+        factory.manage_addMockupVersionedContent('index', 'Some Content')
+        index = self.root.folder.index
+        self.assertTrue(index)
+        IPublicationWorkflow(index).publish()
+        short_path = self.service.get_short_path(index)
+        self.layer.logout()
+        with self.layer.get_browser() as browser:
+            browser.options.handle_errors = False
+            browser.options.follow_redirect = False
+            self.assertEqual(301, browser.open("/root/$" + short_path))
+            self.assertEqual(browser.headers['location'],
+                            'http://localhost/root/folder')
+
     def test_traverse_with_custom_short_path(self):
         with self.layer.get_browser() as browser:
             browser.options.handle_errors = False

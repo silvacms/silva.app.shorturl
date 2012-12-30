@@ -33,8 +33,11 @@ class Redirect(object):
         self.__name__ = name
 
     def __call__(self):
+        content = self.content
+        if self.content.is_default():
+            content = self.content.get_container()
         url_adapter = component.getMultiAdapter(
-            (self.content, self.request), IContentURL)
+            (content, self.request), IContentURL)
         url = url_adapter.url(host=self.host)
         self.request.response.redirect(url, status=301)
         return ''
