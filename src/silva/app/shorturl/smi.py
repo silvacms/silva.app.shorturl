@@ -110,7 +110,7 @@ class ShortURLFields(Interface):
 class CustomShortURLFields(Interface):
     custom_path = schema.TextLine(
         title=_(u"Custom Short URL"),
-        description=_(u"Create a memorable Custom Short URL for use in other media. Once created, these Custom Short URLs cannot be modified."),
+        description=_(u"Create a memorable Custom Short URL for use in other media. These Custom Short URLs are permanent. Once created, they cannot be modified."),
         required=True)
 
 
