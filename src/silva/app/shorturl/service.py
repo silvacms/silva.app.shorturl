@@ -80,7 +80,7 @@ class ShortURLService(SilvaService):
     _rewrite_url_base = None
 
     manage_options = (
-        {'label':'Short URL configuration', 'action':'manage_settings'},
+        {'label':'Short URL Configuration', 'action':'manage_settings'},
     ) + SilvaService.manage_options
 
     def __init__(self, id):
