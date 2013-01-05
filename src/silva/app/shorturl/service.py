@@ -273,19 +273,19 @@ class ShortURLServiceForm(silvaforms.ZMIComposedForm):
     grok.name('manage_settings')
     grok.context(IShortURLService)
 
-    label = _(u"Short URL Tool Service")
+    label = _(u"Short URL Service")
     description = _(u"Configure Short URL traversing and/or redirection.")
 
 
 class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
-        title=u"Base URL for short URLs",
-        description=u"Reference a short domain name that you've created for Short URLs.",
+        title=u"Base URL for Short URLs",
+        description=u"This is an optional field. If nothing is filled in then Short UTLs will go to the same URL as the public pages. However if you've created a special domain for Short URLs (e.g. http://s.yoursite.com) you can fill it in here.",
         required=False)
     rewrite_url_base = schema.TextLine(
         title=u"Landing URL to redirect to",
-        description=u"Set your base URL to rewrite to a normal, probably longer, landing URL.",
+        description=u"If you're using a special base URL you can have it redirect to a normal (probably longer) landing URL.",
         required=False)
 
 
@@ -295,7 +295,7 @@ class ShortURLDomainSettings(silvaforms.ZMISubForm):
     grok.order(10)
 
     label = _(u"Base URL")
-    description = _(u"Change the base and landing URLs for the Short URL Tool.")
+    description = _(u"Change the base and landing URLs for the Short URLs.")
 
     ignoreContent = False
     ignoreRequest = True
