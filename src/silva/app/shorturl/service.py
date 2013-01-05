@@ -281,11 +281,11 @@ class IShortURLSettingsFields(Interface):
 
     short_url_base = schema.TextLine(
         title=u"Base URL for Short URLs",
-        description=u"This is an optional field. If nothing is filled in then Short UTLs will go to the same URL as the public pages. However if you've created a special domain for Short URLs (e.g. http://s.yoursite.com) you can fill it in here.",
+        description=u"This is an optional field. If nothing is filled in then Short URLs will have the same domain as your site's public pages. However if you've created a special domain for Short URLs (e.g. http://s.yoursite.com) you can fill it in here.",
         required=False)
     rewrite_url_base = schema.TextLine(
         title=u"Landing URL to redirect to",
-        description=u"If you're using a special base URL you can have it redirect to a normal (probably longer) landing URL.",
+        description=u"If you're using a special base URL you can have incoming requests get redirected to a normal landing URL (e.g. http://yourlongsitename.com).",
         required=False)
 
 
