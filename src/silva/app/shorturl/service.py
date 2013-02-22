@@ -37,6 +37,7 @@ from . import SERVICE_NAME, SHORT_URL_PREFIX
 
 
 def closest_short_url_service(location):
+    # XXX Why not use getUtility ?
     while location:
         if ISite.providedBy(location):
             service = location._getOb(SERVICE_NAME, None)

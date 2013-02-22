@@ -2,12 +2,11 @@
 # See also LICENSE.txt
 
 from five import grok
-from zope import component
+from zope.component import queryUtility, getUtility
 from zope import schema
 from zope.cachedescriptors.property import Lazy
 from zope.interface import Interface
 from zope.intid.interfaces import IIntIds
-from zope.location.interfaces import ISite
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.traversing.browser import absoluteURL
 
@@ -45,9 +44,6 @@ class ShortURLTool(silvaforms.SMIComposedForm):
     label = _(u'Short URLs')
     description = _(u'This screen lets you manage and customize Short URLs. The URLs link directly to the public view of this item.')
 
-    def available(self):
-        return bool(component.queryUtility(IShortURLService)) and not \
-            ISite.providedBy(self.context)
 
 
 class ShortURLMenu(MenuItem):
@@ -56,6 +52,9 @@ class ShortURLMenu(MenuItem):
     grok.require('silva.ChangeSilvaContent')
     name = _(u'Short URLs')
     screen = ShortURLTool
+
+    def available(self):
+        return queryUtility(IShortURLService) is not None
 
 
 class ShortURLInformation(silvaviews.Viewlet):
@@ -66,11 +65,7 @@ class ShortURLInformation(silvaviews.Viewlet):
 
     @Lazy
     def service(self):
-        return component.queryUtility(IShortURLService)
-
-    @Lazy
-    def short_url_service(self):
-        return closest_short_url_service(self.context)
+        return queryUtility(IShortURLService)
 
     def available(self):
         return self.short_url is not None or \
@@ -83,14 +78,6 @@ class ShortURLInformation(silvaviews.Viewlet):
         if self.service is not None:
             self.short_url = self.service.get_short_url(
                 self.context, self.request)
-
-        if self.short_url_service is not None:
-            pass
-            # XXX: FIXME
-            # self.custom_short_url = \
-            #     self.short_url_service.get_custom_short_url(
-            #         self.context,
-            #         self.request)
 
 
 class ShortURLFields(Interface):
@@ -136,7 +123,7 @@ class RESTCustomShortPathInfo(UIREST):
         content = self.context.get_content_from_custom_short_path(custom_path)
         if content is None:
             return self.json_response(None)
-        int_id = component.getUtility(IIntIds).register(content)
+        int_id = getUtility(IIntIds).register(content)
         return self.json_response({
             'id': content.getId(),
             'intid': int_id,
@@ -163,8 +150,7 @@ class ShortURLWidget(FieldWidget):
 
     @Lazy
     def service(self):
-        service = closest_short_url_service(self.form.context)
-        return service
+        return closest_short_url_service(self.form.context)
 
     @Lazy
     def base_url(self):
@@ -210,7 +196,7 @@ class CustomPathWidget(ShortURLWidget):
     def update(self):
         super(CustomPathWidget, self).update()
         need(ICustomPathResources)
-        int_id = component.getUtility(IIntIds).register(self.form.context)
+        int_id = getUtility(IIntIds).register(self.form.context)
         self._htmlAttributes['data-lookup-url'] = self.lookup_url
         self._htmlAttributes['data-target-id'] = str(int_id)
         self._htmlAttributes['size'] = '24'
@@ -231,31 +217,28 @@ class ShortURLFormBase(silvaforms.SMISubForm):
     ignoreRequest = True
 
     @Lazy
-    def site(self):
-        if self.short_url_service is not None:
-            return closest_site(self.short_url_service)
+    def service(self):
+        return closest_short_url_service(self.context)
 
     def get_custom_short_path(self):
-        return self.short_url_service.get_custom_short_path(self.context)
+        return self.service.get_custom_short_path(self.context)
 
-    @Lazy
-    def short_url_service(self):
-        return closest_short_url_service(self.context)
+    def available(self):
+        return self.service is not None
 
 
 def custom_short_paths_default(form):
-    return form.short_url_service.get_custom_short_paths(form.context)
+    return form.service.get_custom_short_paths(form.context)
 
 def short_url_default(form):
-    return SHORT_URL_PREFIX + form.short_url_service.get_short_path(
+    return SHORT_URL_PREFIX + form.service.get_short_path(
         form.context)
 
 def custom_paths_available(form):
-    return bool(form.short_url_service.get_custom_short_paths(form.context))
+    return bool(form.service.get_custom_short_paths(form.context))
 
 
 class ShortURLForm(ShortURLFormBase):
-
     label = _(u'Copy Short URLs')
     description = _(u'<This DESCRIPTION SHORT URL DISPLAY FORM does not display>')
 
@@ -271,7 +254,7 @@ class ShortURLForm(ShortURLFormBase):
     #     'data-confirmation': _(u'Are you sure you want to clear'
     #                             ' the custom short path ?')})
     # def clear_custom_path(self):
-    #     self.short_url_service.unregister_custom_short_path(
+    #     self.service.unregister_custom_short_path(
     #         self.context)
     #     return silvaforms.SUCCESS
 
@@ -282,7 +265,7 @@ class SaveCustomPathAction(silvaforms.Action):
         data, errors = form.extractData()
         if errors:
             return silvaforms.FAILURE
-        form.short_url_service.register_custom_short_path(
+        form.service.register_custom_short_path(
             data.get('custom_path'), form.context)
         return silvaforms.SUCCESS
 
