@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2002-2011 Infrae. All rights reserved.
+# Copyright (c) 2002-2013 Infrae. All rights reserved.
 # See also LICENSE.txt
 
 from setuptools import setup, find_packages
@@ -34,13 +34,20 @@ setup(name='silva.app.shorturl',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-        'Zope2',
+        'Products.Silva',
         'five.grok',
         'setuptools',
-        'Products.Silva',
+        'silva.app.forest',
         'silva.core.conf',
+        'silva.core.interfaces',
+        'silva.core.services',
+        'silva.core.smi',
         'silva.core.views',
-        'silva.core.services'
+        'silva.translations',
+        'silva.ui',
+        'zope.component',
+        'zope.interface',
+        'zope.schema',
         ],
       tests_require=tests_require,
       extras_require={'test': tests_require},
