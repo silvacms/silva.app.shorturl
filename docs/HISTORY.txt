@@ -1,4 +1,7 @@
-silva.app.shorturl 3.0 (unreleased)
------------------------------------
+Changes
+=======
+
+3.0 (2013/03/07)
+----------------
 
 * Initial release

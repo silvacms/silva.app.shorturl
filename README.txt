@@ -22,7 +22,7 @@ These provide a memorable URL that’s better for communication since the
 path contains meaning as opposed to gibberish. It’s especially effective
 for usage in other mediums like email and print.
 
-When the extension is activated a "Short URLs" item appears in Silva's
+When the extension is activated a *Short URLs* entry appears in Silva's
 Settings menu. The screen displays the Short URL for that item and
 provides a form for creating Custom Short URLs.
 
