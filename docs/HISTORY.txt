@@ -4,7 +4,7 @@ Changes
 3.0.1 (unreleased)
 ------------------
 
-* ...
+* Update API for name chooser.
 
 3.0 (2013/03/07)
 ----------------
