@@ -195,7 +195,7 @@ class CustomURLNameChooser(grok.Subscription):
     def __init__(self, context):
         self.context = context
 
-    def checkName(self, name, content):
+    def checkName(self, name, content, file=None, interface=None):
         service = self.context._getOb(SERVICE_NAME, None)
         if service is not None and IShortURLService.providedBy(service):
             content = service.get_content_from_custom_short_path(name)
