@@ -4,7 +4,7 @@ Changes
 3.0.1 (unreleased)
 ------------------
 
-* Update API for name chooser.
+* Update API for name chooser to prevent to create custom short urls with id of content.
 
 3.0 (2013/03/07)
 ----------------
