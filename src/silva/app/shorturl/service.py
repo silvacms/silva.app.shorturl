@@ -2,20 +2,20 @@
 # Copyright (c) 2012-2013 Infrae. All rights reserved.
 # See also LICENSE.txt
 
+import logging
 import random
 from copy import copy
 
 from five import grok
-from zope.intid.interfaces import IIntIds
-from zope.component import getUtility, getMultiAdapter
-from zope.interface import Interface
-from zope.location.interfaces import ISite
 from zope import schema
-from zope.cachedescriptors.property import Lazy
+from zope.component import getUtility, getMultiAdapter, queryUtility
+from zope.interface import Interface
+from zope.intid.interfaces import IIntIds
+from zope.location.interfaces import ISite
 
 import BTrees
 
-from Acquisition import aq_parent
+from Acquisition import aq_parent, aq_base
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 
@@ -33,8 +33,10 @@ from zeam.form.ztk.actions import EditAction
 
 from .interfaces import IShortURLService, IShortURLResolverService
 from .codec import ShortURLCodec
-
 from . import SERVICE_NAME, SHORT_URL_PREFIX
+
+
+logger = logging.getLogger('silva.app.shorturls')
 
 
 def closest_short_url_service(location):
@@ -90,31 +92,46 @@ class ShortURLService(SilvaService):
         self._custom_url_index = self.family.OI.BTree()
         self._custom_url_reverse_index = self.family.IO.BTree()
 
-    @Lazy
-    def _resolver(self):
-        return getUtility(IShortURLResolverService)
+    def _get_resolver(self):
+        resolver = getattr(aq_base(self), '_v_resolver', None)
+        if resolver is None:
+            resolver = queryUtility(IShortURLResolverService)
+            self._v_resolver = resolver
+        return resolver
 
-    @Lazy
-    def intids(self):
-        return getUtility(IIntIds)
+    def _get_ids(self):
+        ids = getattr(aq_base(self), '_v_ids', None)
+        if ids is None:
+            ids = getUtility(IIntIds)
+            self._v_ids = ids
+        return ids
 
     # shortcuts for resolver
 
     def get_content(self, short_path):
-        return self._resolver.get_content(short_path)
+        resolver = self._get_resolver()
+        if resolver is not None:
+            return resolver.get_content(short_path)
+        return None
 
     def get_short_path(self, content):
-        return self._resolver.get_short_path(content)
+        resolver = self._get_resolver()
+        if resolver is not None:
+            return resolver.get_short_path(content)
+        return None
 
     def validate_short_path(self, short_path):
-        return self._resolver.validate_short_path(short_path)
+        resolver = self._get_resolver()
+        if resolver is not None:
+            return resolver.validate_short_path(short_path)
+        return None
 
     # --
 
     security.declareProtected(
         'View Management Screens', 'register_custom_short_path')
     def register_custom_short_path(self, short_path, content):
-        id = self.intids.register(content)
+        id = self._get_ids().register(content)
         short_path_set = self._custom_url_reverse_index.get(id, None)
         if short_path_set is None:
             self._custom_url_reverse_index[id] = \
@@ -123,7 +140,7 @@ class ShortURLService(SilvaService):
         self._custom_url_index[short_path] = id
 
     def unregister_custom_short_path(self, short_path, content):
-        id = self.intids.register(content)
+        id = self._get_ids().register(content)
         short_path_set = self._custom_url_reverse_index.get(id, None)
         if short_path_set is None:
             return False
@@ -134,7 +151,7 @@ class ShortURLService(SilvaService):
         return True
 
     def get_custom_short_paths(self, content):
-        id = self.intids.register(content)
+        id = self._get_ids().register(content)
         try:
             return set(self._custom_url_reverse_index[id])
         except KeyError:
@@ -145,7 +162,7 @@ class ShortURLService(SilvaService):
             id = self._custom_url_index[short_path]
         except KeyError:
             return None
-        return self.intids.queryObject(id)
+        return self._get_ids().queryObject(id)
 
     def get_short_url(self, content, request):
         short_path = self.get_short_path(content)

@@ -22,11 +22,13 @@ class SilvaShortURLInstaller(DefaultInstaller):
     service_name = SERVICE_NAME
 
     def install_custom(self, root):
-        if SERVICE_NAME not in root.objectIds():
+        installed_ids = root.objectIds()
+        if SERVICE_NAME not in installed_ids:
             factory = root.manage_addProduct['silva.app.shorturl']
             factory.manage_addShortURLService(SERVICE_NAME)
         resolver_name = SERVICE_NAME + '_resolver'
-        if resolver_name not in root.objectIds():
+        if resolver_name not in installed_ids:
+            factory = root.manage_addProduct['silva.app.shorturl']
             factory.manage_addShortURLResolverService(resolver_name)
 
 
