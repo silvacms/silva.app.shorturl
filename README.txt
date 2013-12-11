@@ -5,9 +5,9 @@ silva.app.shorturl
 Introduction
 ============
 
-This extension provides native Short URLs in Silva. It allows users to
-manage short hyperlinks to any Silva content item. It's particularly
-useful for Twitter postings.
+This extension provides native Short URLs in `Silva`_. It allows users
+to manage short hyperlinks to any Silva content item. It's
+particularly useful for Twitter postings.
 
 Instead of sending a URL such as:
 http://www.yoursite.com/department/news/articlename (51 characters)
@@ -32,5 +32,7 @@ visitor to the destination content.
 Code repository
 ===============
 
-Source code can be found at :
-https://hg.infrae.com/silva.app.shorturl
+Source code can be found in Git:
+https://github.com/silvacms/silva.app.shorturl
+
+.. _Silva: http://silvacms.org

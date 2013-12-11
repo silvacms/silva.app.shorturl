@@ -14,7 +14,7 @@ tests_require = [
 
 setup(name='silva.app.shorturl',
       version=version,
-      description="Short url generation for silva",
+      description="Short url generation for Silva CMS",
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),
       classifiers=[
@@ -26,7 +26,7 @@ setup(name='silva.app.shorturl',
       keywords='silva shorturl',
       author='Infrae',
       author_email='info@infrae.com',
-      url='http://infrae.com/products/silva',
+      url='https://github.com/silvacms/silva.app.shorturl',
       license='BSD',
       package_dir={'': 'src'},
       packages=find_packages('src'),
